@@ -1,165 +1,72 @@
-// Shopping Cart Functions
-
-// Get cart from localStorage
-function getCart() {
-    return JSON.parse(localStorage.getItem('cart') || '{}');
-}
-
-// Save cart to localStorage
-function saveCart(cart) {
-    localStorage.setItem('cart', JSON.stringify(cart));
-    updateCartCount();
-}
-
-// Add item to cart
-function addToCart(productId, quantity = 1) {
-    const cart = getCart();
-    cart[productId] = (cart[productId] || 0) + quantity;
-    saveCart(cart);
-    showNotification('Added to cart!', 'success');
-}
-
-// Remove item from cart
-function removeFromCart(productId) {
-    const cart = getCart();
-    delete cart[productId];
-    saveCart(cart);
-    showNotification('Removed from cart', 'info');
-    if (window.location.pathname.includes('cart.html')) {
-        loadCartPage();
-    }
-}
-
-// Update cart item quantity
-function updateCartItem(productId, quantity) {
-    const cart = getCart();
-    if (quantity <= 0) {
-        delete cart[productId];
-    } else {
-        cart[productId] = quantity;
-    }
-    saveCart(cart);
-    if (window.location.pathname.includes('cart.html')) {
-        loadCartPage();
-    }
-}
-
-// Get total number of items in cart
-function getCartCount() {
-    const cart = getCart();
-    return Object.values(cart).reduce((a, b) => a + b, 0);
-}
-
-// Update cart count display
-function updateCartCount() {
-    const count = getCartCount();
-    const cartElements = document.querySelectorAll('.cart-count');
-    cartElements.forEach(el => {
-        el.textContent = count;
-    });
-}
-
-// Load cart page
 async function loadCartPage() {
     const cart = getCart();
-    const productIds = Object.keys(cart);
+    const ids = Object.keys(cart);
     
-    if (productIds.length === 0) {
-        document.getElementById('cartItems').innerHTML = `
-            <div style="text-align: center; padding: 50px;">
-                <i class="fas fa-shopping-cart" style="font-size: 64px; color: #ccc;"></i>
+    if (ids.length === 0) {
+        document.getElementById('cartContent').innerHTML = `
+            <div class="empty-cart" style="text-align:center;padding:50px">
+                <i class="fas fa-shopping-cart" style="font-size:64px;color:#ccc"></i>
                 <h2>Your cart is empty</h2>
-                <a href="/" class="btn-primary" style="margin-top: 20px; display: inline-block;">Continue Shopping</a>
-            </div>
-        `;
-        document.getElementById('cartTotal').innerHTML = 'KSh 0';
+                <a href="/" class="btn-primary">Continue Shopping</a>
+            </div>`;
         return;
     }
     
     try {
-        const products = [];
+        const items = [];
         let total = 0;
-        
-        for (const id of productIds) {
-            const response = await fetch(`/api/products/${id}`);
-            const product = await response.json();
-            const quantity = cart[id];
-            const subtotal = product.price * quantity;
-            total += subtotal;
-            products.push({ ...product, quantity, subtotal });
+        for (const id of ids) {
+            const res = await fetch(`/api/products/${id}`);
+            const p = await res.json();
+            const qty = cart[id];
+            const sub = p.price * qty;
+            total += sub;
+            items.push({ ...p, quantity: qty, subtotal: sub });
         }
         
-        // Display cart items
-        document.getElementById('cartItems').innerHTML = `
+        document.getElementById('cartContent').innerHTML = `
             <table class="cart-table">
-                <thead>
-                    <tr>
-                        <th>Product</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Subtotal</th>
-                        <th></th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr></thead>
                 <tbody>
-                    ${products.map(p => `
+                    ${items.map(p => `
                         <tr>
-                            <td>
-                                <img src="${p.image || 'https://via.placeholder.com/80'}" alt="${p.name}" style="width: 80px; height: 80px; object-fit: cover; margin-right: 15px;">
-                                ${p.name}
-                            </td>
+                            <td><img src="${p.image || 'https://via.placeholder.com/80'}" style="width:80px;height:80px;object-fit:cover;margin-right:15px">${p.name}</td>
                             <td>KSh ${p.price.toLocaleString()}</td>
-                            <td>
-                                <input type="number" value="${p.quantity}" min="1" 
-                                       onchange="updateCartItem('${p._id}', this.value)" 
-                                       style="width: 60px; padding: 5px;">
-                            </td>
+                            <td><input type="number" id="qty_${p._id}" value="${p.quantity}" min="1" style="width:60px;padding:5px"></td>
                             <td>KSh ${p.subtotal.toLocaleString()}</td>
-                            <td>
-                                <button onclick="removeFromCart('${p._id}')" style="background: none; border: none; color: #e74c3c; cursor: pointer;">
-                                    <i class="fas fa-trash"></i> Remove
-                                </button>
-                            </td>
+                            <td><button onclick="removeFromCart('${p._id}')" style="background:none;border:none;color:#e74c3c;cursor:pointer"><i class="fas fa-trash"></i> Remove</button></td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
-        `;
-        
-        document.getElementById('cartTotal').innerHTML = `KSh ${total.toLocaleString()}`;
-        document.getElementById('checkoutBtn').style.display = 'block';
-        
+            <div class="cart-actions">
+                <button class="btn-update" onclick="updateAllQuantities()">Update Cart</button>
+                <button class="btn-checkout" onclick="proceedToCheckout()">Proceed to Checkout</button>
+            </div>
+            <div class="cart-summary"><h3>Order Summary</h3><p>Total: <strong>KSh ${total.toLocaleString()}</strong></p></div>`;
     } catch (error) {
         console.error('Error loading cart:', error);
     }
 }
 
-// Checkout functions
-function proceedToCheckout() {
+function updateAllQuantities() {
     const cart = getCart();
-    if (Object.keys(cart).length === 0) {
-        showNotification('Your cart is empty!', 'error');
-        return;
+    for (const id of Object.keys(cart)) {
+        const input = document.getElementById(`qty_${id}`);
+        if (input) {
+            const val = parseInt(input.value);
+            if (val > 0) cart[id] = val;
+            else delete cart[id];
+        }
     }
-    window.location.href = '/checkout';
+    saveCart(cart);
+    loadCartPage();
+    showNotification('Cart updated!');
 }
 
-// Notification function
-function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        ${message}
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
+function proceedToCheckout() {
+    if (Object.keys(getCart()).length === 0) showNotification('Cart is empty!', 'error');
+    else window.location.href = '/checkout';
 }
 
-// Initialize cart on page load
-document.addEventListener('DOMContentLoaded', () => {
-    updateCartCount();
-    if (window.location.pathname.includes('cart.html')) {
-        loadCartPage();
-    }
-});
+if (window.location.pathname.includes('cart.html')) document.addEventListener('DOMContentLoaded', loadCartPage);
