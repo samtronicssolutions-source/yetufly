@@ -1,4 +1,3 @@
-// Cart functions
 function getCart() {
     return JSON.parse(localStorage.getItem('cart') || '{}');
 }
@@ -19,33 +18,21 @@ function removeFromCart(productId) {
     const cart = getCart();
     delete cart[productId];
     saveCart(cart);
-    location.reload();
+    showNotification('Removed from cart');
+    if (window.location.pathname.includes('cart.html')) location.reload();
 }
 
 function updateCartItem(productId, quantity) {
     const cart = getCart();
-    if (quantity <= 0) {
-        delete cart[productId];
-    } else {
-        cart[productId] = quantity;
-    }
+    if (quantity <= 0) delete cart[productId];
+    else cart[productId] = quantity;
     saveCart(cart);
-}
-
-function getCartItems() {
-    const cart = getCart();
-    const items = [];
-    let total = 0;
-    
-    // This needs to be async - call from component
-    return { items, total };
 }
 
 function updateCartCount() {
     const cart = getCart();
     const count = Object.values(cart).reduce((a, b) => a + b, 0);
-    const cartCountElements = document.querySelectorAll('.cart-count');
-    cartCountElements.forEach(el => el.textContent = count);
+    document.querySelectorAll('.cart-count').forEach(el => el.textContent = count);
 }
 
 function showNotification(message, type = 'success') {
@@ -56,12 +43,8 @@ function showNotification(message, type = 'success') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Format price
 function formatPrice(price) {
     return `KSh ${price.toLocaleString()}`;
 }
 
-// Load products on page
-document.addEventListener('DOMContentLoaded', () => {
-    updateCartCount();
-});
+document.addEventListener('DOMContentLoaded', updateCartCount);
