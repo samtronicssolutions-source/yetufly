@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yetu - Quality Products for Every Home</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <div class="container">
+                <div class="logo">
+                    <h1><a href="/">Yetu</a></h1>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="What are you looking for?">
+                    <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="header-actions">
+                    <a href="/cart" class="cart-icon">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-count" id="cartCount">0</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <nav class="main-nav">
+            <div class="container">
+                <ul class="nav-menu" id="categoriesMenu"></ul>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h2>Excellent Quality Only</h2>
+                    <p>Nothing else - Quality products at the best prices</p>
+                    <a href="/category" class="btn-primary">Shop Now</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="products-section">
+            <div class="container">
+                <h2 class="section-title">Featured Products</h2>
+                <div class="products-grid" id="featuredProducts"></div>
+            </div>
+        </section>
+
+        <section class="categories-showcase">
+            <div class="container">
+                <h2 class="section-title">Shop by Category</h2>
+                <div class="categories-grid" id="categoriesGrid"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h3>About Yetu</h3>
+                    <p>Your trusted partner for quality products in Kenya. We offer the best selection of audio, TV, accessories, and utensils.</p>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/category">Shop</a></li>
+                        <li><a href="/about">About Us</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Customer Service</h3>
+                    <ul>
+                        <li><a href="/shipping">Shipping Info</a></li>
+                        <li><a href="/returns">Returns Policy</a></li>
+                        <li><a href="/faq">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Contact Us</h3>
+                    <p><i class="fas fa-phone"></i> +254 700 000 000</p>
+                    <p><i class="fas fa-envelope"></i> info@yetu.com</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Yetu. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    <script>
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            loadFeaturedProducts();
+            updateCartCount();
+        });
+
+        async function loadCategories() {
+            try {
+                const response = await fetch('/api/categories');
+                const categories = await response.json();
+                
+                // Load main categories for menu
+                const mainCategories = categories.filter(c => !c.parent_id);
+                const categoriesMenu = document.getElementById('categoriesMenu');
+                categoriesMenu.innerHTML = '<li><a href="/">Home</a></li>' + 
+                    mainCategories.map(cat => `
+                        <li class="dropdown">
+                            <a href="/category?id=${cat._id}">${cat.name}</a>
+                            ${categories.filter(c => c.parent_id === cat._id).length > 0 ? `
+                                <ul class="dropdown-menu">
+                                    ${categories.filter(c => c.parent_id === cat._id).map(sub => `
+                                        <li><a href="/category?id=${sub._id}">${sub.name}</a></li>
+                                    `).join('')}
+                                </ul>
+                            ` : ''}
+                        </li>
+                    `).join('');
+                
+                // Load categories for showcase
+                const categoriesGrid = document.getElementById('categoriesGrid');
+                categoriesGrid.innerHTML = mainCategories.map(cat => `
+                    <div class="category-item" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://via.placeholder.com/400x300?text=${cat.name}');">
+                        <h3>${cat.name}</h3>
+                        <a href="/category?id=${cat._id}" class="btn-category">Shop Now</a>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        async function loadFeaturedProducts() {
+            try {
+                const response = await fetch('/api/products?featured=true');
+                const products = await response.json();
+                
+                const productsGrid = document.getElementById('featuredProducts');
+                productsGrid.innerHTML = products.map(product => `
+                    <div class="product-card">
+                        <div class="product-image">
+                            <a href="/product/${product._id}">
+                                <img src="${product.image || 'https://via.placeholder.com/250'}" alt="${product.name}">
+                            </a>
+                        </div>
+                        <div class="product-info">
+                            <h3><a href="/product/${product._id}">${product.name}</a></h3>
+                            <p class="price">KSh ${product.price.toLocaleString()}</p>
+                            <button onclick="addToCart('${product._id}')" class="btn-add-to-cart">
+                                <i class="fas fa-shopping-cart"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+
+        async function addToCart(productId) {
+            try {
+                const response = await fetch('/api/orders/cart', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: productId, quantity: 1 })
+                });
+                
+                if (response.ok) {
+                    updateCartCount();
+                    showNotification('Added to cart!');
+                }
+            } catch (error) {
+                console.error('Error adding to cart:', error);
+            }
+        }
+
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('cart') || '{}');
+            const count = Object.values(cart).reduce((a, b) => a + b, 0);
+            document.getElementById('cartCount').textContent = count;
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `<i class="fas fa-check"></i> ${message}`;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        function searchProducts() {
+            const query = document.getElementById('searchInput').value;
+            if (query) {
+                window.location.href = `/category?search=${encodeURIComponent(query)}`;
+            }
+        }
+    </script>
+</body>
+</html>
