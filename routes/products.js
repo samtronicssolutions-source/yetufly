@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get all products
 router.get('/', async (req, res) => {
   try {
     const { category, featured, limit, search } = req.query;
@@ -12,9 +13,7 @@ router.get('/', async (req, res) => {
     
     if (category) query.category_id = category;
     if (featured === 'true') query.featured = true;
-    if (search) {
-      query.$text = { $search: search };
-    }
+    if (search) query.$text = { $search: search };
     
     let productsQuery = Product.find(query).populate('category_id');
     if (limit) productsQuery = productsQuery.limit(parseInt(limit));
@@ -25,6 +24,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get single product
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate('category_id');
@@ -35,6 +35,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Create product (admin only)
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -62,6 +63,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
   }
 });
 
+// Update product (admin only)
 router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -89,6 +91,7 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
   }
 });
 
+// Delete product (admin only)
 router.delete('/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
