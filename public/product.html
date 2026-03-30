@@ -6,195 +6,39 @@
     <title>Product Details - Yetu</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        .product-detail {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin: 40px 0;
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .product-main-image {
-            width: 100%;
-            height: 400px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-        .product-price {
-            font-size: 32px;
-            color: #f57224;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .product-description {
-            margin: 20px 0;
-            line-height: 1.6;
-            color: #666;
-        }
-        .quantity-selector {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .quantity-selector input {
-            width: 80px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .btn-add-to-cart-large {
-            width: 100%;
-            padding: 15px;
-            background: #f57224;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .stock-status {
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .in-stock {
-            color: #27ae60;
-            background: #e8f5e9;
-        }
-        .out-of-stock {
-            color: #e74c3c;
-            background: #ffebee;
-        }
-        @media (max-width: 768px) {
-            .product-detail {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <style>.product-detail{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin:40px 0;background:white;padding:30px;border-radius:10px}.product-main-image{width:100%;height:400px;object-fit:cover;border-radius:10px}.product-price{font-size:32px;color:#f57224;font-weight:bold;margin:20px 0}.quantity-selector{display:flex;gap:15px;margin:20px 0}.quantity-selector input{width:80px;padding:10px;border:1px solid #ddd;border-radius:5px}.btn-add-to-cart-large{width:100%;padding:15px;background:#f57224;color:white;border:none;border-radius:5px;font-size:18px;cursor:pointer}.stock-status{padding:10px;border-radius:5px;margin:10px 0}.in-stock{color:#27ae60;background:#e8f5e9}.out-of-stock{color:#e74c3c;background:#ffebee}@media(max-width:768px){.product-detail{grid-template-columns:1fr}}</style>
 </head>
 <body>
     <div id="header-placeholder"></div>
-    
-    <main>
-        <div class="container">
-            <div id="productContent"></div>
-            <div id="relatedProducts"></div>
-        </div>
-    </main>
-    
+    <main><div class="container"><div id="productContent"></div><div id="relatedProducts"></div></div></main>
     <div id="footer-placeholder"></div>
-    
-    <script src="/js/main.js"></script>
-    <script src="/js/cart.js"></script>
+    <script src="/js/main.js"></script><script src="/js/cart.js"></script>
     <script>
-        // Get product ID from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('id') || window.location.pathname.split('/').pop();
-        
-        // Load product details
+        const productId = window.location.pathname.split('/').pop();
         async function loadProduct() {
             try {
-                const response = await fetch(`/api/products/${productId}`);
-                const product = await response.json();
-                
-                document.getElementById('productContent').innerHTML = `
-                    <div class="product-detail">
-                        <div class="product-gallery">
-                            <img src="${product.image || 'https://via.placeholder.com/400'}" 
-                                 alt="${product.name}" class="product-main-image" id="mainImage">
-                        </div>
-                        <div class="product-info">
-                            <h1>${product.name}</h1>
-                            <div class="product-meta">
-                                Category: ${product.category_id?.name || 'Uncategorized'}
-                            </div>
-                            <div class="product-price">KSh ${product.price.toLocaleString()}</div>
-                            <div class="product-description">${product.description}</div>
-                            <div class="stock-status ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
-                                ${product.stock > 0 ? `✓ In Stock (${product.stock} available)` : '✗ Out of Stock'}
-                            </div>
-                            ${product.stock > 0 ? `
-                                <div class="quantity-selector">
-                                    <label>Quantity:</label>
-                                    <input type="number" id="quantity" value="1" min="1" max="${product.stock}">
-                                </div>
-                                <button class="btn-add-to-cart-large" onclick="addToCartWithQuantity('${product._id}')">
-                                    <i class="fas fa-shopping-cart"></i> Add to Cart
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-                
-                // Load related products
-                loadRelatedProducts(product.category_id?._id, product._id);
-                
-            } catch (error) {
-                console.error('Error loading product:', error);
-                document.getElementById('productContent').innerHTML = '<div style="text-align: center; padding: 50px;">Product not found</div>';
-            }
+                const res = await fetch(`/api/products/${productId}`);
+                const p = await res.json();
+                document.getElementById('productContent').innerHTML = `<div class="product-detail"><div><img src="${p.image || 'https://via.placeholder.com/400'}" class="product-main-image"></div><div><h1>${p.name}</h1><div class="product-price">KSh ${p.price.toLocaleString()}</div><div class="product-description">${p.description}</div><div class="stock-status ${p.stock>0?'in-stock':'out-of-stock'}">${p.stock>0?`✓ In Stock (${p.stock} available)`:'✗ Out of Stock'}</div>${p.stock>0?`<div class="quantity-selector"><label>Quantity:</label><input type="number" id="quantity" value="1" min="1" max="${p.stock}"></div><button class="btn-add-to-cart-large" onclick="addToCartWithQty('${p._id}')">Add to Cart</button>`:''}</div></div>`;
+                if (p.category_id) loadRelated(p.category_id._id, p._id);
+            } catch (error) { document.getElementById('productContent').innerHTML = '<div style="text-align:center;padding:50px">Product not found</div>'; }
         }
-        
-        async function loadRelatedProducts(categoryId, currentProductId) {
-            if (!categoryId) return;
-            
-            try {
-                const response = await fetch(`/api/products?category=${categoryId}`);
-                const products = await response.json();
-                const related = products.filter(p => p._id !== currentProductId).slice(0, 4);
-                
-                if (related.length === 0) return;
-                
-                document.getElementById('relatedProducts').innerHTML = `
-                    <h2 class="section-title">Related Products</h2>
-                    <div class="products-grid">
-                        ${related.map(p => `
-                            <div class="product-card">
-                                <div class="product-image">
-                                    <a href="/product/${p._id}">
-                                        <img src="${p.image || 'https://via.placeholder.com/250'}" alt="${p.name}">
-                                    </a>
-                                </div>
-                                <div class="product-info">
-                                    <h3><a href="/product/${p._id}">${p.name}</a></h3>
-                                    <p class="price">KSh ${p.price.toLocaleString()}</p>
-                                    <button onclick="addToCart('${p._id}')" class="btn-add-to-cart">
-                                        Add to Cart
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } catch (error) {
-                console.error('Error loading related products:', error);
-            }
+        async function loadRelated(catId, currId) {
+            const res = await fetch(`/api/products?category=${catId}`);
+            const products = await res.json();
+            const related = products.filter(p => p._id !== currId).slice(0,4);
+            if (!related.length) return;
+            document.getElementById('relatedProducts').innerHTML = `<h2 class="section-title">Related Products</h2><div class="products-grid">${related.map(p => `<div class="product-card"><div class="product-image"><a href="/product/${p._id}"><img src="${p.image || 'https://via.placeholder.com/250'}"></a></div><div class="product-info"><h3><a href="/product/${p._id}">${p.name}</a></h3><p class="price">KSh ${p.price.toLocaleString()}</p><button onclick="addToCart('${p._id}')" class="btn-add-to-cart">Add to Cart</button></div></div>`).join('')}</div>`;
         }
-        
-        function addToCartWithQuantity(productId) {
-            const quantity = parseInt(document.getElementById('quantity').value);
-            addToCart(productId, quantity);
-        }
-        
-        // Load header and footer
+        function addToCartWithQty(id) { addToCart(id, parseInt(document.getElementById('quantity').value)); }
         async function loadHeaderFooter() {
-            try {
-                const headerResponse = await fetch('/header.html');
-                const footerResponse = await fetch('/footer.html');
-                const header = await headerResponse.text();
-                const footer = await footerResponse.text();
-                document.getElementById('header-placeholder').innerHTML = header;
-                document.getElementById('footer-placeholder').innerHTML = footer;
-                updateCartCount();
-            } catch (error) {
-                console.error('Error loading header/footer:', error);
-            }
+            const header = await (await fetch('/header.html')).text();
+            const footer = await (await fetch('/footer.html')).text();
+            document.getElementById('header-placeholder').innerHTML = header;
+            document.getElementById('footer-placeholder').innerHTML = footer;
+            updateCartCount();
+            if (typeof loadNavCategories === 'function') loadNavCategories();
         }
-        
         loadHeaderFooter();
         loadProduct();
     </script>
