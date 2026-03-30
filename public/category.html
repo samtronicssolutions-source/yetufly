@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - Yetu</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>.category-layout{display:grid;grid-template-columns:280px 1fr;gap:30px;margin:30px 0}.sidebar{background:white;border-radius:10px;padding:20px;position:sticky;top:20px}.sidebar h3{margin-bottom:15px;border-bottom:2px solid #f57224;padding-bottom:10px}.sidebar ul{list-style:none}.sidebar li{margin-bottom:10px}.sidebar li a{color:#666;text-decoration:none;display:block;padding:8px 10px}.sidebar li a:hover,.sidebar li a.active{color:#f57224;padding-left:15px}.sort-bar{background:white;padding:15px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between}.sort-select{padding:8px;border:1px solid #ddd;border-radius:5px}@media(max-width:768px){.category-layout{grid-template-columns:1fr}.sidebar{position:static}}</style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <main><div class="container"><div class="category-layout"><aside class="sidebar"><div class="filter-section"><h3>Categories</h3><ul id="categoryList"></ul></div></aside><div class="main-content"><div class="sort-bar"><div id="resultsCount"></div><select id="sortBy" class="sort-select"><option value="newest">Newest First</option><option value="price_low">Price: Low to High</option><option value="price_high">Price: High to Low</option></select></div><div class="products-grid" id="productsGrid"></div></div></div></div></main>
+    <div id="footer-placeholder"></div>
+    <script src="/js/main.js"></script><script src="/js/cart.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const catId = urlParams.get('id');
+        const searchQuery = urlParams.get('search');
+        let allProducts = [];
+
+        async function loadCategories() {
+            const res = await fetch('/api/categories');
+            const cats = await res.json();
+            const mainCats = cats.filter(c => !c.parent_id);
+            document.getElementById('categoryList').innerHTML = `<li><a href="/category" ${!catId ? 'class="active"' : ''}>All Products</a></li>` + mainCats.map(cat => `<li><a href="/category?id=${cat._id}" ${catId == cat._id ? 'class="active"' : ''}>${cat.name}</a>${cats.filter(c => c.parent_id === cat._id).length ? `<ul style="margin-left:20px">${cats.filter(c => c.parent_id === cat._id).map(sub => `<li><a href="/category?id=${sub._id}" ${catId == sub._id ? 'class="active"' : ''}>${sub.name}</a></li>`).join('')}</ul>` : ''}</li>`).join('');
+        }
+
+        async function loadProducts() {
+            let url = '/api/products';
+            if (catId) url += `?category=${catId}`;
+            if (searchQuery) url += `${catId ? '&' : '?'}search=${searchQuery}`;
+            const res = await fetch(url);
+            allProducts = await res.json();
+            displayProducts(allProducts);
+        }
+
+        function displayProducts(products) {
+            document.getElementById('resultsCount').innerHTML = `${products.length} products found`;
+            document.getElementById('productsGrid').innerHTML = products.map(p => `<div class="product-card" data-price="${p.price}" data-date="${p.created_at}"><div class="product-image"><a href="/product/${p._id}"><img src="${p.image || 'https://via.placeholder.com/250'}"></a></div><div class="product-info"><h3><a href="/product/${p._id}">${p.name}</a></h3><p class="price">KSh ${p.price.toLocaleString()}</p><button onclick="addToCart('${p._id}')" class="btn-add-to-cart">Add to Cart</button></div></div>`).join('');
+        }
+
+        function sortProducts() {
+            const sortBy = document.getElementById('sortBy').value;
+            const sorted = [...allProducts];
+            if (sortBy === 'price_low') sorted.sort((a,b) => a.price - b.price);
+            else if (sortBy === 'price_high') sorted.sort((a,b) => b.price - a.price);
+            else sorted.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+            displayProducts(sorted);
+        }
+
+        async function loadHeaderFooter() {
+            const header = await (await fetch('/header.html')).text();
+            const footer = await (await fetch('/footer.html')).text();
+            document.getElementById('header-placeholder').innerHTML = header;
+            document.getElementById('footer-placeholder').innerHTML = footer;
+            updateCartCount();
+            if (typeof loadNavCategories === 'function') loadNavCategories();
+        }
+
+        document.getElementById('sortBy').addEventListener('change', sortProducts);
+        loadHeaderFooter();
+        loadCategories();
+        loadProducts();
+    </script>
+</body>
+</html>
