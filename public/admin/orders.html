@@ -3,214 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Management - Yetu Admin</title>
+    <title>Order Management - Yetu</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-        }
-        .admin-container {
-            display: flex;
-        }
-        .sidebar {
-            width: 250px;
-            background: #2c3e50;
-            color: white;
-            min-height: 100vh;
-        }
-        .sidebar h2 {
-            padding: 20px;
-            background: #1a2a3a;
-        }
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-        }
-        .sidebar li a {
-            display: block;
-            padding: 15px 20px;
-            color: white;
-            text-decoration: none;
-        }
-        .sidebar li a:hover {
-            background: #34495e;
-        }
-        .content {
-            flex: 1;
-            padding: 20px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        .filters {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        .filters select, .filters input {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .orders-table {
-            background: white;
-            border-radius: 10px;
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        th {
-            background: #f8f9fa;
-            font-weight: bold;
-        }
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            display: inline-block;
-        }
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .status-processing {
-            background: #cce5ff;
-            color: #004085;
-        }
-        .status-shipped {
-            background: #d4edda;
-            color: #155724;
-        }
-        .status-delivered {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .payment-completed {
-            background: #d4edda;
-            color: #155724;
-        }
-        .payment-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .payment-failed {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .btn-view {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-        .btn-update {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            margin-left: 5px;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .order-details {
-            margin-top: 20px;
-        }
-        .order-details h3 {
-            margin: 15px 0 10px;
-            color: #333;
-        }
-        .order-items {
-            border: 1px solid #eee;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-        .order-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-        }
-        .order-item:last-child {
-            border-bottom: none;
-        }
-        .status-select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-        .btn-save {
-            background: #27ae60;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .close {
-            float: right;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-        }
-        .close:hover {
-            color: #333;
-        }
-        .search-box {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            width: 250px;
-        }
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial,sans-serif;background:#f5f5f5}
+        .admin-container{display:flex}
+        .sidebar{width:250px;background:#2c3e50;color:white;min-height:100vh}
+        .sidebar h2{padding:20px;background:#1a2a3a}
+        .sidebar ul{list-style:none;padding:0}
+        .sidebar li a{display:block;padding:15px 20px;color:white;text-decoration:none}
+        .sidebar li a:hover{background:#34495e}
+        .content{flex:1;padding:20px}
+        .filters{background:white;padding:15px;border-radius:10px;margin-bottom:20px;display:flex;gap:15px;flex-wrap:wrap}
+        .filters select,.filters input{padding:8px;border:1px solid #ddd;border-radius:5px}
+        .orders-table{background:white;border-radius:10px;overflow-x:auto}
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:12px;text-align:left;border-bottom:1px solid #eee}
+        th{background:#f8f9fa}
+        .status-badge{padding:4px 8px;border-radius:4px;font-size:12px;font-weight:bold;display:inline-block}
+        .status-pending{background:#fff3cd;color:#856404}
+        .status-processing{background:#cce5ff;color:#004085}
+        .status-shipped{background:#d4edda;color:#155724}
+        .status-delivered{background:#d1ecf1;color:#0c5460}
+        .status-cancelled{background:#f8d7da;color:#721c24}
+        .payment-completed{background:#d4edda;color:#155724}
+        .payment-pending{background:#fff3cd;color:#856404}
+        .payment-failed{background:#f8d7da;color:#721c24}
+        .btn-view,.btn-update{padding:5px 10px;border-radius:3px;border:none;cursor:pointer;margin:0 3px}
+        .btn-view{background:#3498db;color:white}
+        .btn-update{background:#27ae60;color:white}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:1000}
+        .modal-content{background:white;padding:30px;border-radius:10px;width:90%;max-width:600px;max-height:80vh;overflow-y:auto}
+        .order-item{display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid #eee}
+        .close{float:right;font-size:24px;cursor:pointer;color:#999}
+        .close:hover{color:#333}
+        .search-box{padding:8px;border:1px solid #ddd;border-radius:5px;width:250px}
     </style>
 </head>
 <body>
@@ -221,242 +49,83 @@
                 <li><a href="/admin/dashboard"><i class="fas fa-dashboard"></i> Dashboard</a></li>
                 <li><a href="/admin/dashboard" onclick="showAddProductModal()"><i class="fas fa-plus"></i> Add Product</a></li>
                 <li><a href="/admin/orders"><i class="fas fa-shopping-cart"></i> Orders</a></li>
-                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="#" onclick="adminLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
         <div class="content">
-            <div class="header">
-                <h1>Order Management</h1>
-                <button class="btn-view" onclick="refreshOrders()"><i class="fas fa-sync-alt"></i> Refresh</button>
-            </div>
-            
+            <h1>Order Management</h1>
             <div class="filters">
-                <input type="text" id="searchOrder" placeholder="Search by order number or customer..." class="search-box">
-                <select id="statusFilter">
-                    <option value="">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-                <select id="paymentFilter">
-                    <option value="">All Payments</option>
-                    <option value="pending">Pending</option>
-                    <option value="completed">Completed</option>
-                    <option value="failed">Failed</option>
-                </select>
+                <input type="text" id="searchOrder" placeholder="Search by order or customer..." class="search-box">
+                <select id="statusFilter"><option value="">All Status</option><option value="pending">Pending</option><option value="processing">Processing</option><option value="shipped">Shipped</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select>
+                <select id="paymentFilter"><option value="">All Payments</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="failed">Failed</option></select>
+                <button onclick="refreshOrders()" class="btn-view">Refresh</button>
             </div>
-            
-            <div class="orders-table" id="ordersTable">
-                <div style="text-align: center; padding: 40px;">Loading orders...</div>
-            </div>
+            <div class="orders-table" id="ordersTable"><div style="text-align:center;padding:40px">Loading...</div></div>
         </div>
     </div>
-
-    <!-- Order Details Modal -->
-    <div id="orderModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeOrderModal()">&times;</span>
-            <h2>Order Details</h2>
-            <div id="orderDetails"></div>
-        </div>
-    </div>
-
+    <div id="orderModal" class="modal"><div class="modal-content"><span class="close" onclick="closeModal()">&times;</span><h2>Order Details</h2><div id="orderDetails"></div></div></div>
+    <script src="/js/admin.js"></script>
     <script>
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-            window.location.href = '/admin/login';
-        }
-
+        if (!localStorage.getItem('adminToken')) window.location.href = '/admin/login';
         let allOrders = [];
 
         async function loadOrders() {
             try {
-                const response = await fetch('/api/admin/orders', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                allOrders = await response.json();
-                filterAndDisplayOrders();
-            } catch (error) {
-                console.error('Error loading orders:', error);
-                document.getElementById('ordersTable').innerHTML = '<div style="text-align: center; padding: 40px; color: red;">Error loading orders</div>';
-            }
+                const res = await fetch('/api/admin/orders', { headers: getAuthHeader() });
+                allOrders = await res.json();
+                filterOrders();
+            } catch (error) { document.getElementById('ordersTable').innerHTML = '<div style="text-align:center;padding:40px">Error loading orders</div>'; }
         }
 
-        function filterAndDisplayOrders() {
-            const searchTerm = document.getElementById('searchOrder').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const paymentFilter = document.getElementById('paymentFilter').value;
-            
-            let filtered = allOrders.filter(order => {
-                const matchesSearch = order.order_number.toLowerCase().includes(searchTerm) ||
-                                     order.customer_name.toLowerCase().includes(searchTerm) ||
-                                     order.customer_phone.includes(searchTerm);
-                const matchesStatus = !statusFilter || order.status === statusFilter;
-                const matchesPayment = !paymentFilter || order.payment_status === paymentFilter;
-                return matchesSearch && matchesStatus && matchesPayment;
-            });
-            
+        function filterOrders() {
+            const search = document.getElementById('searchOrder').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const payment = document.getElementById('paymentFilter').value;
+            const filtered = allOrders.filter(o => 
+                (o.order_number.toLowerCase().includes(search) || o.customer_name.toLowerCase().includes(search)) &&
+                (!status || o.status === status) && (!payment || o.payment_status === payment));
             displayOrders(filtered);
         }
 
         function displayOrders(orders) {
-            if (orders.length === 0) {
-                document.getElementById('ordersTable').innerHTML = '<div style="text-align: center; padding: 40px;">No orders found</div>';
-                return;
-            }
-            
-            const tableHtml = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Order #</th>
-                            <th>Customer</th>
-                            <th>Phone</th>
-                            <th>Amount</th>
-                            <th>Payment</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${orders.map(order => `
-                            <tr>
-                                <td><strong>${order.order_number}</strong></td>
-                                <td>${order.customer_name}</td>
-                                <td>${order.customer_phone}</td>
-                                <td>KSh ${order.total_amount.toLocaleString()}</td>
-                                <td>
-                                    <span class="status-badge payment-${order.payment_status}">
-                                        ${order.payment_status.toUpperCase()}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="status-badge status-${order.status}">
-                                        ${order.status.toUpperCase()}
-                                    </span>
-                                </td>
-                                <td>${new Date(order.created_at).toLocaleDateString()}</td>
-                                <td>
-                                    <button class="btn-view" onclick="viewOrder('${order._id}')">View</button>
-                                    <button class="btn-update" onclick="updateOrderStatus('${order._id}', '${order.status}')">Update</button>
-                                </td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            document.getElementById('ordersTable').innerHTML = tableHtml;
+            if (!orders.length) { document.getElementById('ordersTable').innerHTML = '<div style="text-align:center;padding:40px">No orders found</div>'; return; }
+            document.getElementById('ordersTable').innerHTML = `<table><thead><tr><th>Order #</th><th>Customer</th><th>Phone</th><th>Amount</th><th>Payment</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>${orders.map(o => `
+                <tr><td><strong>${o.order_number}</strong></td><td>${o.customer_name}</td><td>${o.customer_phone}</td><td>KSh ${o.total_amount.toLocaleString()}</td>
+                <td><span class="status-badge payment-${o.payment_status}">${o.payment_status.toUpperCase()}</span></td>
+                <td><span class="status-badge status-${o.status}">${o.status.toUpperCase()}</span></td>
+                <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                <td><button class="btn-view" onclick="viewOrder('${o._id}')">View</button><button class="btn-update" onclick="updateOrder('${o._id}','${o.status}')">Update</button></td></tr>`).join('')}</tbody></table>`;
         }
 
-        async function viewOrder(orderId) {
-            try {
-                const order = allOrders.find(o => o._id === orderId);
-                if (!order) return;
-                
-                const modal = document.getElementById('orderModal');
-                const detailsDiv = document.getElementById('orderDetails');
-                
-                detailsDiv.innerHTML = `
-                    <div class="order-details">
-                        <p><strong>Order Number:</strong> ${order.order_number}</p>
-                        <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
-                        <p><strong>Customer Name:</strong> ${order.customer_name}</p>
-                        <p><strong>Phone:</strong> ${order.customer_phone}</p>
-                        <p><strong>Email:</strong> ${order.customer_email}</p>
-                        <p><strong>Payment Method:</strong> ${order.payment_method.toUpperCase()}</p>
-                        <p><strong>Payment Status:</strong> 
-                            <span class="status-badge payment-${order.payment_status}">${order.payment_status.toUpperCase()}</span>
-                        </p>
-                        <p><strong>Order Status:</strong> 
-                            <span class="status-badge status-${order.status}">${order.status.toUpperCase()}</span>
-                        </p>
-                        ${order.mpesa_transaction_id ? `<p><strong>M-Pesa Transaction:</strong> ${order.mpesa_transaction_id}</p>` : ''}
-                        
-                        <h3>Items</h3>
-                        <div class="order-items">
-                            ${order.items.map(item => `
-                                <div class="order-item">
-                                    <span>${item.product_id?.name || 'Product'} x ${item.quantity}</span>
-                                    <span>KSh ${item.price.toLocaleString()}</span>
-                                    <span>Total: KSh ${(item.price * item.quantity).toLocaleString()}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="order-item" style="font-weight: bold; background: #f8f9fa;">
-                            <span>Total Amount</span>
-                            <span>KSh ${order.total_amount.toLocaleString()}</span>
-                        </div>
-                    </div>
-                `;
-                
-                modal.style.display = 'flex';
-            } catch (error) {
-                console.error('Error viewing order:', error);
-            }
+        async function viewOrder(id) {
+            const order = allOrders.find(o => o._id === id);
+            if (!order) return;
+            document.getElementById('orderDetails').innerHTML = `
+                <div><p><strong>Order:</strong> ${order.order_number}</p><p><strong>Date:</strong> ${new Date(order.created_at).toLocaleString()}</p>
+                <p><strong>Customer:</strong> ${order.customer_name}</p><p><strong>Phone:</strong> ${order.customer_phone}</p><p><strong>Email:</strong> ${order.customer_email}</p>
+                <p><strong>Payment:</strong> ${order.payment_method.toUpperCase()} - <span class="status-badge payment-${order.payment_status}">${order.payment_status}</span></p>
+                <p><strong>Status:</strong> <span class="status-badge status-${order.status}">${order.status}</span></p>
+                ${order.mpesa_transaction_id ? `<p><strong>M-Pesa:</strong> ${order.mpesa_transaction_id}</p>` : ''}
+                <h3>Items</h3>${order.items.map(i => `<div class="order-item"><span>${i.product_id?.name || 'Product'} x ${i.quantity}</span><span>KSh ${(i.price * i.quantity).toLocaleString()}</span></div>`).join('')}
+                <div class="order-item"><strong>Total</strong><strong>KSh ${order.total_amount.toLocaleString()}</strong></div></div>`;
+            document.getElementById('orderModal').style.display = 'flex';
         }
 
-        async function updateOrderStatus(orderId, currentStatus) {
+        async function updateOrder(id, currentStatus) {
             const newStatus = prompt('Enter new status (pending, processing, shipped, delivered, cancelled):', currentStatus);
             if (!newStatus || newStatus === currentStatus) return;
-            
-            if (!['pending', 'processing', 'shipped', 'delivered', 'cancelled'].includes(newStatus)) {
-                alert('Invalid status. Use: pending, processing, shipped, delivered, cancelled');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`/api/admin/orders/${orderId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ status: newStatus })
-                });
-                
-                if (response.ok) {
-                    alert('Order status updated successfully!');
-                    loadOrders();
-                } else {
-                    alert('Failed to update order status');
-                }
-            } catch (error) {
-                console.error('Error updating order:', error);
-                alert('Error updating order status');
-            }
+            if (!['pending','processing','shipped','delivered','cancelled'].includes(newStatus)) { alert('Invalid status'); return; }
+            const res = await fetch(`/api/admin/orders/${id}`, { method: 'PUT', headers: { ...getAuthHeader(), 'Content-Type': 'application/json' }, body: JSON.stringify({ status: newStatus }) });
+            if (res.ok) { alert('Status updated'); loadOrders(); }
+            else alert('Failed');
         }
 
-        function closeOrderModal() {
-            document.getElementById('orderModal').style.display = 'none';
-        }
-
-        function refreshOrders() {
-            loadOrders();
-        }
-
-        function logout() {
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminUser');
-            window.location.href = '/admin/login';
-        }
-
-        // Event listeners
-        document.getElementById('searchOrder').addEventListener('input', filterAndDisplayOrders);
-        document.getElementById('statusFilter').addEventListener('change', filterAndDisplayOrders);
-        document.getElementById('paymentFilter').addEventListener('change', filterAndDisplayOrders);
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('orderModal');
-            if (event.target === modal) {
-                closeOrderModal();
-            }
-        };
-        
-        // Load orders on page load
+        function closeModal() { document.getElementById('orderModal').style.display = 'none'; }
+        function refreshOrders() { loadOrders(); }
+        document.getElementById('searchOrder').addEventListener('input', filterOrders);
+        document.getElementById('statusFilter').addEventListener('change', filterOrders);
+        document.getElementById('paymentFilter').addEventListener('change', filterOrders);
+        window.onclick = (e) => { if (e.target === document.getElementById('orderModal')) closeModal(); };
         loadOrders();
     </script>
 </body>
