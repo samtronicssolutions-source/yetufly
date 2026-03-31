@@ -5,7 +5,7 @@
                 <h1><a href="/">Yetu</a></h1>
             </div>
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="Search products...">
+                <input type="text" id="searchInput" placeholder="What are you looking for?">
                 <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
             </div>
             <div class="header-actions">
@@ -26,20 +26,20 @@
 <script>
     async function loadNavCategories() {
         try {
-            const res = await fetch('/api/categories');
-            const categories = await res.json();
-            const mainCats = categories.filter(c => !c.parent_id);
+            const response = await fetch('/api/categories');
+            const categories = await response.json();
+            const mainCategories = categories.filter(c => !c.parent_id);
             
-            const menu = document.getElementById('categoriesMenu');
-            if (menu) {
-                menu.innerHTML = '<li><a href="/">Home</a></li>' + 
-                    mainCats.map(cat => `
+            const categoriesMenu = document.getElementById('categoriesMenu');
+            if (categoriesMenu) {
+                categoriesMenu.innerHTML = '<li><a href="/">Home</a></li>' + 
+                    mainCategories.map(cat => `
                         <li class="dropdown">
-                            <a href="/category?id=${cat._id}">${escapeHtml(cat.name)}</a>
-                            ${categories.filter(c => c.parent_id === cat._id).length ? `
+                            <a href="/category?id=${cat._id}">${cat.name}</a>
+                            ${categories.filter(c => c.parent_id === cat._id).length > 0 ? `
                                 <ul class="dropdown-menu">
                                     ${categories.filter(c => c.parent_id === cat._id).map(sub => `
-                                        <li><a href="/category?id=${sub._id}">${escapeHtml(sub.name)}</a></li>
+                                        <li><a href="/category?id=${sub._id}">${sub.name}</a></li>
                                     `).join('')}
                                 </ul>
                             ` : ''}
@@ -52,22 +52,11 @@
     }
     
     function searchProducts() {
-        const query = document.getElementById('searchInput').value.trim();
+        const query = document.getElementById('searchInput').value;
         if (query) {
             window.location.href = `/category?search=${encodeURIComponent(query)}`;
         }
     }
     
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    // Load categories when page loads
-    document.addEventListener('DOMContentLoaded', loadNavCategories);
+    loadNavCategories();
 </script>
