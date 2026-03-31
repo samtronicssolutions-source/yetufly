@@ -13,7 +13,9 @@ router.get('/', async (req, res) => {
     
     if (category) query.category_id = category;
     if (featured === 'true') query.featured = true;
-    if (search) query.$text = { $search: search };
+    if (search) {
+      query.$text = { $search: search };
+    }
     
     let productsQuery = Product.find(query).populate('category_id');
     if (limit) productsQuery = productsQuery.limit(parseInt(limit));
@@ -42,6 +44,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
     
+    // Create product data object
     const productData = {
       name: req.body.name,
       description: req.body.description,
@@ -51,15 +54,16 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       featured: req.body.featured === 'true'
     };
     
- // In the POST and PUT routes, when saving image:
-if (req.file) {
-  productData.image = `/images/products/${req.file.filename}`;
-}
+    // Add image if uploaded
+    if (req.file) {
+      productData.image = `/images/products/${req.file.filename}`;
+    }
     
     const product = new Product(productData);
     await product.save();
     res.status(201).json(product);
   } catch (error) {
+    console.error('Create product error:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -71,9 +75,11 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
     
+    // Find the product
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
     
+    // Update fields directly on the product object
     product.name = req.body.name;
     product.description = req.body.description;
     product.price = parseFloat(req.body.price);
@@ -81,13 +87,16 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     product.stock = parseInt(req.body.stock);
     product.featured = req.body.featured === 'true';
     
-  // In the POST and PUT routes, when saving image:
-if (req.file) {
-  productData.image = `/images/products/${req.file.filename}`;
-}
+    // Update image if new one uploaded
+    if (req.file) {
+      product.image = `/images/products/${req.file.filename}`;
+    }
+    
+    // Save the updated product
     await product.save();
     res.json(product);
   } catch (error) {
+    console.error('Update product error:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -101,8 +110,9 @@ router.delete('/:id', auth, async (req, res) => {
     
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
-    res.json({ message: 'Product deleted' });
+    res.json({ message: 'Product deleted successfully' });
   } catch (error) {
+    console.error('Delete product error:', error);
     res.status(500).json({ error: error.message });
   }
 });
