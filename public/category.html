@@ -1,63 +1,249 @@
-<script>
-    // Get URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const categoryId = urlParams.get('id');
-    const searchQuery = urlParams.get('search');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shop - Yetu</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .category-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        .sidebar {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            position: sticky;
+            top: 140px;
+        }
+        .sidebar h3 {
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f57224;
+            padding-bottom: 10px;
+        }
+        .sidebar ul {
+            list-style: none;
+        }
+        .sidebar li {
+            margin-bottom: 10px;
+        }
+        .sidebar li a {
+            color: #666;
+            text-decoration: none;
+            display: block;
+            padding: 8px 10px;
+        }
+        .sidebar li a:hover,
+        .sidebar li a.active {
+            color: #f57224;
+            padding-left: 15px;
+        }
+        .sort-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sort-select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .search-header {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+        .search-header h2 {
+            color: #f57224;
+            margin-bottom: 5px;
+        }
+        @media (max-width: 768px) {
+            .category-layout {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
     
-    // Load products based on search or category
-    async function loadProducts() {
-        let url = '/api/products';
-        if (categoryId) {
-            url += `?category=${categoryId}`;
-        } else if (searchQuery) {
-            url += `?search=${searchQuery}`;
+    <main>
+        <div class="container">
+            <div class="search-header" id="searchHeader" style="display: none;">
+                <h2 id="pageTitle">Search Results</h2>
+                <p id="resultsCount"></p>
+            </div>
+            
+            <div class="category-layout">
+                <aside class="sidebar">
+                    <div class="filter-section">
+                        <h3>Categories</h3>
+                        <ul id="categoryList"></ul>
+                    </div>
+                </aside>
+                
+                <div class="main-content">
+                    <div class="sort-bar">
+                        <div id="resultsCountMain"></div>
+                        <select id="sortBy" class="sort-select">
+                            <option value="newest">Newest First</option>
+                            <option value="price_low">Price: Low to High</option>
+                            <option value="price_high">Price: High to Low</option>
+                        </select>
+                    </div>
+                    <div class="products-grid" id="productsGrid"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <div id="footer-placeholder"></div>
+    
+    <script src="/js/main.js"></script>
+    <script src="/js/cart.js"></script>
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryId = urlParams.get('id');
+        const searchQuery = urlParams.get('search');
+        let allProducts = [];
+        
+        // Show search header if searching
+        if (searchQuery) {
+            document.getElementById('searchHeader').style.display = 'block';
+            document.getElementById('pageTitle').innerHTML = `Search Results: "${escapeHtml(searchQuery)}"`;
         }
         
-        try {
-            const response = await fetch(url);
-            const products = await response.json();
-            displayProducts(products);
-            
-            // Update page title
-            if (searchQuery) {
-                document.getElementById('pageTitle').textContent = `Search Results: "${searchQuery}"`;
-                document.getElementById('resultsCount').textContent = `${products.length} products found for "${searchQuery}"`;
+        async function loadCategories() {
+            try {
+                const res = await fetch('/api/categories');
+                const cats = await res.json();
+                const mainCats = cats.filter(c => !c.parent_id);
+                document.getElementById('categoryList').innerHTML = `
+                    <li><a href="/category" ${!categoryId ? 'class="active"' : ''}>All Products</a></li>
+                    ${mainCats.map(cat => `
+                        <li>
+                            <a href="/category?id=${cat._id}" ${categoryId == cat._id ? 'class="active"' : ''}>${escapeHtml(cat.name)}</a>
+                            ${cats.filter(c => c.parent_id === cat._id).length ? `
+                                <ul style="margin-left: 20px; margin-top: 5px;">
+                                    ${cats.filter(c => c.parent_id === cat._id).map(sub => `
+                                        <li><a href="/category?id=${sub._id}" ${categoryId == sub._id ? 'class="active"' : ''}>${escapeHtml(sub.name)}</a></li>
+                                    `).join('')}
+                                </ul>
+                            ` : ''}
+                        </li>
+                    `).join('')}
+                `;
+            } catch (error) {
+                console.error('Error loading categories:', error);
             }
-        } catch (error) {
-            console.error('Error loading products:', error);
         }
-    }
-    
-    function displayProducts(products) {
-        const grid = document.getElementById('productsGrid');
-        if (products.length === 0) {
-            grid.innerHTML = `
-                <div style="text-align: center; padding: 50px;">
-                    <i class="fas fa-search" style="font-size: 48px; color: #ccc;"></i>
-                    <h3>No products found</h3>
-                    <p>Try searching for something else</p>
-                    <a href="/" class="btn-primary">Back to Home</a>
-                </div>
-            `;
-        } else {
-            grid.innerHTML = products.map(p => `
-                <div class="product-card">
-                    <div class="product-image">
-                        <a href="/product/${p._id}">
-                            <img src="${p.image || 'https://via.placeholder.com/250'}" alt="${p.name}">
-                        </a>
-                    </div>
-                    <div class="product-info">
-                        <h3><a href="/product/${p._id}">${p.name}</a></h3>
-                        <p class="price">KSh ${p.price.toLocaleString()}</p>
-                        <button onclick="addToCart('${p._id}')" class="btn-add-to-cart">
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+        
+        async function loadProducts() {
+            let url = '/api/products';
+            if (categoryId) {
+                url += `?category=${categoryId}`;
+            } else if (searchQuery) {
+                url += `?search=${searchQuery}`;
+            }
+            
+            try {
+                const response = await fetch(url);
+                allProducts = await response.json();
+                displayProducts(allProducts);
+                
+                const countText = searchQuery ? `${allProducts.length} products found for "${searchQuery}"` : `${allProducts.length} products found`;
+                document.getElementById('resultsCount').textContent = countText;
+                document.getElementById('resultsCountMain').textContent = countText;
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
         }
-    }
-    
-    loadProducts();
-</script>
+        
+        function displayProducts(products) {
+            const grid = document.getElementById('productsGrid');
+            if (products.length === 0) {
+                grid.innerHTML = `
+                    <div style="text-align: center; padding: 50px; grid-column: 1/-1;">
+                        <i class="fas fa-search" style="font-size: 48px; color: #ccc;"></i>
+                        <h3>No products found</h3>
+                        <p>Try searching for something else</p>
+                        <a href="/" class="btn-primary" style="margin-top: 20px; display: inline-block;">Back to Home</a>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = products.map(p => `
+                    <div class="product-card" data-price="${p.price}" data-date="${p.created_at}">
+                        <div class="product-image">
+                            <a href="/product/${p._id}">
+                                <img src="${p.image || 'https://via.placeholder.com/250'}" alt="${escapeHtml(p.name)}">
+                            </a>
+                        </div>
+                        <div class="product-info">
+                            <h3><a href="/product/${p._id}">${escapeHtml(p.name)}</a></h3>
+                            <p class="price">KSh ${(p.price || 0).toLocaleString()}</p>
+                            <button onclick="addToCart('${p._id}')" class="btn-add-to-cart">
+                                <i class="fas fa-shopping-cart"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        function sortProducts() {
+            const sortBy = document.getElementById('sortBy').value;
+            const sorted = [...allProducts];
+            if (sortBy === 'price_low') sorted.sort((a, b) => a.price - b.price);
+            else if (sortBy === 'price_high') sorted.sort((a, b) => b.price - a.price);
+            else sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            displayProducts(sorted);
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        async function loadHeaderFooter() {
+            try {
+                const headerRes = await fetch('/header.html');
+                const footerRes = await fetch('/footer.html');
+                const header = await headerRes.text();
+                const footer = await footerRes.text();
+                document.getElementById('header-placeholder').innerHTML = header;
+                document.getElementById('footer-placeholder').innerHTML = footer;
+                updateCartCount();
+                if (typeof loadNavCategories === 'function') loadNavCategories();
+            } catch (error) {
+                console.error('Error loading header/footer:', error);
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('sortBy').addEventListener('change', sortProducts);
+        
+        // Initialize
+        loadHeaderFooter();
+        loadCategories();
+        loadProducts();
+    </script>
+</body>
+</html>
