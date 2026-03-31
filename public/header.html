@@ -5,7 +5,7 @@
                 <h1><a href="/">Yetu</a></h1>
             </div>
             <div class="search-bar">
-                <input type="text" id="searchInput" placeholder="What are you looking for?">
+                <input type="text" id="searchInput" placeholder="What are you looking for?" autocomplete="off">
                 <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
             </div>
             <div class="header-actions">
@@ -24,6 +24,7 @@
 </header>
 
 <script>
+    // Load categories for navigation
     async function loadNavCategories() {
         try {
             const response = await fetch('/api/categories');
@@ -35,11 +36,11 @@
                 categoriesMenu.innerHTML = '<li><a href="/">Home</a></li>' + 
                     mainCategories.map(cat => `
                         <li class="dropdown">
-                            <a href="/category?id=${cat._id}">${cat.name}</a>
+                            <a href="/category?id=${cat._id}">${escapeHtml(cat.name)}</a>
                             ${categories.filter(c => c.parent_id === cat._id).length > 0 ? `
                                 <ul class="dropdown-menu">
                                     ${categories.filter(c => c.parent_id === cat._id).map(sub => `
-                                        <li><a href="/category?id=${sub._id}">${sub.name}</a></li>
+                                        <li><a href="/category?id=${sub._id}">${escapeHtml(sub.name)}</a></li>
                                     `).join('')}
                                 </ul>
                             ` : ''}
@@ -51,12 +52,44 @@
         }
     }
     
+    // Search function - redirects to category page with search query
     function searchProducts() {
-        const query = document.getElementById('searchInput').value;
+        const query = document.getElementById('searchInput').value.trim();
         if (query) {
             window.location.href = `/category?search=${encodeURIComponent(query)}`;
+        } else {
+            // Show a small alert if empty
+            const input = document.getElementById('searchInput');
+            input.style.border = '2px solid #e74c3c';
+            setTimeout(() => {
+                input.style.border = '2px solid #f57224';
+            }, 1000);
         }
     }
     
+    // Search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchProducts();
+        }
+    });
+    
+    // Clear red border on typing
+    document.getElementById('searchInput').addEventListener('input', function() {
+        this.style.border = '2px solid #f57224';
+    });
+    
+    // Escape HTML to prevent XSS
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Load categories when page loads
     loadNavCategories();
 </script>
