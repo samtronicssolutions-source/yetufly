@@ -25,3 +25,5 @@ services:
         value: production
       - key: PORT
         value: 3000
+      - key: BASE_URL
+        value: https://yetu.onrender.com
