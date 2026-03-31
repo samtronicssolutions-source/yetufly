@@ -5,16 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - Yetu</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#f57224,#ff8c42);display:flex;justify-content:center;align-items:center;height:100vh}
-        .login-container{background:white;padding:40px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.2);width:100%;max-width:400px}
-        .login-container h1{text-align:center;color:#f57224;margin-bottom:30px}
-        .form-group{margin-bottom:20px}
-        .form-group label{display:block;margin-bottom:5px;font-weight:bold}
-        .form-group input{width:100%;padding:10px;border:1px solid #ddd;border-radius:5px}
-        button{width:100%;padding:12px;background:#f57224;color:white;border:none;border-radius:5px;cursor:pointer;font-size:16px}
-        button:hover{background:#e05e1a}
-        .error{background:#f8d7da;color:#721c24;padding:10px;border-radius:5px;margin-bottom:20px;display:none}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f57224, #ff8c42);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-container h1 {
+            text-align: center;
+            color: #f57224;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #f57224;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #e05e1a;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+        }
+        .loading.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -22,20 +87,84 @@
         <h1>Yetu Admin Login</h1>
         <div id="error" class="error"></div>
         <form id="loginForm">
-            <div class="form-group"><label>Username</label><input type="text" id="username" required></div>
-            <div class="form-group"><label>Password</label><input type="password" id="password" required></div>
-            <button type="submit">Login</button>
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            <button type="submit" id="loginBtn">Login</button>
+            <div id="loading" class="loading">Logging in...</div>
         </form>
     </div>
-    <script src="/js/admin.js"></script>
+
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        // Clear any existing admin data on login page load
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        
+        const form = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const username = document.getElementById('username').value;
+            
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const success = await adminLogin(username, password);
-            if (!success) document.getElementById('error').style.display = 'block';
+            
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
+            
+            // Disable button and show loading
+            loginBtn.disabled = true;
+            loadingDiv.classList.add('show');
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/auth/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // Store token
+                    localStorage.setItem('adminToken', data.token);
+                    localStorage.setItem('adminUser', JSON.stringify(data.user));
+                    
+                    // Redirect to dashboard
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    showError(data.error || 'Invalid username or password');
+                    loginBtn.disabled = false;
+                    loadingDiv.classList.remove('show');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Network error. Please try again.');
+                loginBtn.disabled = false;
+                loadingDiv.classList.remove('show');
+            }
         });
+        
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            // Auto hide after 5 seconds
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
     </script>
 </body>
 </html>
