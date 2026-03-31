@@ -58,7 +58,7 @@
         if (query) {
             window.location.href = `/category?search=${encodeURIComponent(query)}`;
         } else {
-            // Show a small alert if empty
+            // Show red border if empty
             const input = document.getElementById('searchInput');
             input.style.border = '2px solid #e74c3c';
             setTimeout(() => {
