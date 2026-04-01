@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shop - Yetu</title>
+    <title>Shop - Yetu Kenya</title>
+    <meta name="description" content="Shop the best products in Kenya at Yetu. Find quality Audio, TV, Accessories, and more at affordable prices.">
+    <meta name="keywords" content="online shopping kenya, yetu, audio, tv, accessories, electronics">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <style>
@@ -71,6 +73,29 @@
             }
         }
     </style>
+    <script>
+        function updateCategorySEO(categoryName, productCount) {
+            if (categoryName) {
+                document.title = `${categoryName} - Yetu Kenya | Best ${categoryName} in Kenya`;
+                
+                let metaDesc = document.querySelector('meta[name="description"]');
+                if (!metaDesc) {
+                    metaDesc = document.createElement('meta');
+                    metaDesc.name = 'description';
+                    document.head.appendChild(metaDesc);
+                }
+                metaDesc.content = `Shop the best ${categoryName} in Kenya at Yetu. Find quality ${categoryName} products at affordable prices. Free shipping on orders over KSh 5,000. ${productCount} products available.`;
+                
+                let metaKeywords = document.querySelector('meta[name="keywords"]');
+                if (!metaKeywords) {
+                    metaKeywords = document.createElement('meta');
+                    metaKeywords.name = 'keywords';
+                    document.head.appendChild(metaKeywords);
+                }
+                metaKeywords.content = `${categoryName}, buy ${categoryName} in kenya, ${categoryName} online, yetu kenya, online shopping kenya`;
+            }
+        }
+    </script>
 </head>
 <body>
     <div id="header-placeholder"></div>
@@ -114,6 +139,7 @@
         const categoryId = urlParams.get('id');
         const searchQuery = urlParams.get('search');
         let allProducts = [];
+        let currentCategory = null;
         
         if (searchQuery) {
             document.getElementById('searchHeader').style.display = 'block';
@@ -125,6 +151,11 @@
                 const res = await fetch('/api/categories');
                 const cats = await res.json();
                 const mainCats = cats.filter(c => !c.parent_id);
+                currentCategory = cats.find(c => c._id === categoryId);
+                if (currentCategory) {
+                    updateCategorySEO(currentCategory.name, allProducts.length);
+                }
+                
                 document.getElementById('categoryList').innerHTML = `
                     <li><a href="/category" ${!categoryId ? 'class="active"' : ''}>All Products</a></li>
                     ${mainCats.map(cat => `
@@ -158,6 +189,10 @@
                 const countText = searchQuery ? `${allProducts.length} products found for "${searchQuery}"` : `${allProducts.length} products found`;
                 document.getElementById('resultsCount').textContent = countText;
                 document.getElementById('resultsCountMain').textContent = countText;
+                
+                if (currentCategory) {
+                    updateCategorySEO(currentCategory.name, allProducts.length);
+                }
             } catch (error) {
                 console.error('Error loading products:', error);
             }
@@ -178,7 +213,7 @@
                     <div class="product-card">
                         <div class="product-image">
                             <a href="/product/${p._id}">
-                                <img src="${p.image || '/images/products/placeholder.jpg'}" alt="${escapeHtml(p.name)}" onerror="this.src='/images/products/placeholder.jpg'">
+                                <img src="${p.image || '/images/products/placeholder.jpg'}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.src='/images/products/placeholder.jpg'">
                             </a>
                         </div>
                         <div class="product-info">
