@@ -17,8 +17,10 @@
         .content { flex: 1; padding: 20px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
         .btn-logout { background: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-        .btn-clear { background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
-        .btn-clear:hover { background: #c82333; }
+        .btn-clear-all { background: #dc3545; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-clear-all:hover { background: #c82333; }
+        .btn-clear-completed { background: #fd7e14; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-clear-completed:hover { background: #e06e0c; }
         .btn-refresh { background: #17a2b8; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
         .btn-refresh:hover { background: #138496; }
         .filter-group { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
@@ -31,9 +33,6 @@
         .status-completed { background: #d4edda; color: #155724; }
         .status-failed { background: #f8d7da; color: #721c24; }
         .status-processing { background: #cce5ff; color: #004085; }
-        .status-shipped { background: #d4edda; color: #155724; }
-        .status-delivered { background: #d1ecf1; color: #0c5460; }
-        .status-cancelled { background: #f8d7da; color: #721c24; }
         .loading { text-align: center; padding: 40px; }
         .modal {
             display: none;
@@ -69,6 +68,17 @@
         }
         .btn-confirm { background: #dc3545; color: white; }
         .btn-cancel { background: #6c757d; color: white; }
+        .stats-info {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .stats-info span {
+            font-weight: bold;
+            color: #f57224;
+        }
     </style>
 </head>
 <body>
@@ -89,10 +99,8 @@
                         <option value="">All Status</option>
                         <option value="pending">Pending</option>
                         <option value="processing">Processing</option>
-                        <option value="shipped">Shipped</option>
-                        <option value="delivered">Delivered</option>
+                        <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
-                        <option value="completed">Completed (Paid)</option>
                     </select>
                     <select id="paymentFilter" class="filter-select">
                         <option value="">All Payments</option>
@@ -101,23 +109,52 @@
                         <option value="failed">Failed</option>
                     </select>
                     <button class="btn-refresh" onclick="refreshOrders()"><i class="fas fa-sync-alt"></i> Refresh</button>
-                    <button class="btn-clear" onclick="showClearModal()"><i class="fas fa-trash-alt"></i> Clear Processed Orders</button>
+                    <button class="btn-clear-completed" onclick="showClearCompletedModal()"><i class="fas fa-check-double"></i> Clear Completed</button>
+                    <button class="btn-clear-all" onclick="showClearAllModal()"><i class="fas fa-trash-alt"></i> Clear All Orders</button>
                 </div>
             </div>
+            <div class="stats-info" id="orderStats">Loading stats...</div>
             <div id="ordersTable" class="loading">Loading orders...</div>
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
-    <div id="clearModal" class="modal">
+    <!-- Clear Completed Orders Modal -->
+    <div id="clearCompletedModal" class="modal">
         <div class="modal-content">
-            <h3>Clear Processed Orders</h3>
+            <i class="fas fa-check-circle" style="font-size: 48px; color: #fd7e14; margin-bottom: 15px;"></i>
+            <h3>Clear Completed Orders</h3>
             <p>This will permanently delete all orders with status:</p>
-            <p style="margin: 15px 0; font-weight: bold;" id="statusList"></p>
+            <p style="margin: 15px 0; font-weight: bold; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                ✓ Completed<br>
+                ✓ Processing<br>
+                ✓ Delivered<br>
+                ✓ Paid
+            </p>
             <p>Are you sure you want to continue?</p>
             <div class="modal-buttons">
-                <button class="btn-confirm" onclick="clearProcessedOrders()">Yes, Delete</button>
-                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" onclick="clearCompletedOrders()">Yes, Delete</button>
+                <button class="btn-cancel" onclick="closeModals()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear All Orders Modal -->
+    <div id="clearAllModal" class="modal">
+        <div class="modal-content">
+            <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #dc3545; margin-bottom: 15px;"></i>
+            <h3>⚠️ Clear ALL Orders</h3>
+            <p>This will permanently delete <strong>ALL</strong> orders including:</p>
+            <p style="margin: 15px 0; font-weight: bold; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                ✓ Pending Orders<br>
+                ✓ Processing Orders<br>
+                ✓ Completed Orders<br>
+                ✓ Cancelled Orders<br>
+                ✓ All Payment Records
+            </p>
+            <p style="color: #dc3545; font-weight: bold;">This action cannot be undone!</p>
+            <div class="modal-buttons">
+                <button class="btn-confirm" onclick="clearAllOrders()">Yes, Delete ALL</button>
+                <button class="btn-cancel" onclick="closeModals()">Cancel</button>
             </div>
         </div>
     </div>
@@ -139,11 +176,30 @@
                 if (!response.ok) throw new Error('Failed to load orders');
                 
                 allOrders = await response.json();
+                updateStats();
                 filterOrders();
             } catch (error) {
                 console.error('Error loading orders:', error);
                 document.getElementById('ordersTable').innerHTML = '<p style="text-align:center;padding:40px;color:red;">Error loading orders</p>';
             }
+        }
+        
+        function updateStats() {
+            const total = allOrders.length;
+            const pending = allOrders.filter(o => o.status === 'pending').length;
+            const processing = allOrders.filter(o => o.status === 'processing').length;
+            const completed = allOrders.filter(o => o.status === 'completed' || o.payment_status === 'completed').length;
+            const totalRevenue = allOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + o.total_amount, 0);
+            
+            document.getElementById('orderStats').innerHTML = `
+                <i class="fas fa-chart-line"></i> 
+                <strong>Order Statistics:</strong> 
+                Total: <span>${total}</span> | 
+                Pending: <span>${pending}</span> | 
+                Processing: <span>${processing}</span> | 
+                Completed/Paid: <span>${completed}</span> | 
+                Revenue: <span>KSh ${totalRevenue.toLocaleString()}</span>
+            `;
         }
         
         function filterOrders() {
@@ -177,7 +233,6 @@
                                 <th>Payment</th>
                                 <th>Status</th>
                                 <th>Date</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,9 +245,6 @@
                                     <td><span class="status-badge status-${o.payment_status}">${o.payment_status}</span></td>
                                     <td><span class="status-badge status-${o.status}">${o.status}</span></td>
                                     <td>${new Date(o.created_at).toLocaleDateString()}</td>
-                                    <td>
-                                        <button class="btn-refresh" onclick="viewOrder('${o._id}')" style="padding: 5px 10px; font-size: 12px;">View</button>
-                                    </td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -201,21 +253,32 @@
             `;
         }
         
-        function showClearModal() {
-            const statuses = [];
-            const hasCompleted = allOrders.some(o => o.status === 'completed' || o.status === 'delivered' || o.payment_status === 'completed');
+        function showClearCompletedModal() {
+            const completedCount = allOrders.filter(o => 
+                o.status === 'completed' || 
+                o.status === 'processing' || 
+                o.payment_status === 'completed'
+            ).length;
             
-            if (hasCompleted) {
-                document.getElementById('statusList').innerHTML = '• Completed<br>• Delivered<br>• Paid (completed payment)';
-                document.getElementById('clearModal').style.display = 'flex';
-            } else {
-                alert('No processed orders to clear. Only orders with status "completed", "delivered", or paid orders can be cleared.');
+            if (completedCount === 0) {
+                alert('No completed orders to clear');
+                return;
             }
+            
+            document.getElementById('clearCompletedModal').style.display = 'flex';
         }
         
-        async function clearProcessedOrders() {
+        function showClearAllModal() {
+            if (allOrders.length === 0) {
+                alert('No orders to clear');
+                return;
+            }
+            document.getElementById('clearAllModal').style.display = 'flex';
+        }
+        
+        async function clearCompletedOrders() {
             try {
-                const response = await fetch('/api/admin/clear-processed-orders', {
+                const response = await fetch('/api/admin/clear-completed-orders', {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -223,8 +286,8 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    alert(`Successfully cleared ${result.deletedCount} processed orders`);
-                    closeModal();
+                    alert(`✅ ${result.deletedCount} completed orders cleared successfully`);
+                    closeModals();
                     loadOrders();
                 } else {
                     alert(result.error || 'Failed to clear orders');
@@ -235,15 +298,31 @@
             }
         }
         
-        function viewOrder(orderId) {
-            const order = allOrders.find(o => o._id === orderId);
-            if (!order) return;
-            
-            alert(`Order #${order.order_number}\nCustomer: ${order.customer_name}\nPhone: ${order.customer_phone}\nTotal: KSh ${order.total_amount.toLocaleString()}\nStatus: ${order.status}\nPayment: ${order.payment_status}`);
+        async function clearAllOrders() {
+            try {
+                const response = await fetch('/api/admin/clear-all-orders', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(`✅ ${result.deletedCount} orders cleared successfully`);
+                    closeModals();
+                    loadOrders();
+                } else {
+                    alert(result.error || 'Failed to clear orders');
+                }
+            } catch (error) {
+                console.error('Error clearing orders:', error);
+                alert('Error clearing orders');
+            }
         }
         
-        function closeModal() {
-            document.getElementById('clearModal').style.display = 'none';
+        function closeModals() {
+            document.getElementById('clearCompletedModal').style.display = 'none';
+            document.getElementById('clearAllModal').style.display = 'none';
         }
         
         function refreshOrders() {
@@ -266,11 +345,9 @@
             });
         }
         
-        // Event listeners
         document.getElementById('statusFilter').addEventListener('change', filterOrders);
         document.getElementById('paymentFilter').addEventListener('change', filterOrders);
         
-        // Load orders on page load
         loadOrders();
     </script>
 </body>
