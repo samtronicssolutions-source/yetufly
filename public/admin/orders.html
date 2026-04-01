@@ -31,78 +31,49 @@
         <div class="sidebar">
             <h2>Yetu Admin</h2>
             <ul>
-                <li><a href="/admin/dashboard"><i class="fas fa-dashboard"></i> Dashboard</a></li>
-                <li><a href="/admin/orders"><i class="fas fa-shopping-cart"></i> Orders</a></li>
-                <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="/admin/dashboard">Dashboard</a></li>
+                <li><a href="/admin/orders">Orders</a></li>
+                <li><a href="#" onclick="logout()">Logout</a></li>
             </ul>
         </div>
         <div class="content">
-            <div class="header">
-                <h1>Orders</h1>
-                <button class="btn-logout" onclick="logout()">Logout</button>
-            </div>
+            <div class="header"><h1>Orders</h1><button class="btn-logout" onclick="logout()">Logout</button></div>
             <div id="ordersTable" class="loading">Loading orders...</div>
         </div>
     </div>
-
     <script>
         const token = localStorage.getItem('adminToken');
-        if (!token) {
-            window.location.href = '/admin/login';
-        }
+        if (!token) window.location.href = '/admin/login';
         
         async function loadOrders() {
             try {
-                const response = await fetch('/api/admin/orders', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (!response.ok) throw new Error('Failed to load orders');
-                
-                const orders = await response.json();
-                
+                const res = await fetch('/api/admin/orders', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!res.ok) throw new Error();
+                const orders = await res.json();
                 if (orders.length === 0) {
                     document.getElementById('ordersTable').innerHTML = '<p style="text-align:center;padding:40px;">No orders yet</p>';
                 } else {
                     document.getElementById('ordersTable').innerHTML = `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Order #</th>
-                                    <th>Customer</th>
-                                    <th>Phone</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${orders.map(o => `
-                                    <tr>
-                                        <td>${o.order_number}</td>
-                                        <td>${o.customer_name}</td>
-                                        <td>${o.customer_phone}</td>
-                                        <td>KSh ${o.total_amount.toLocaleString()}</td>
-                                        <td><span class="status-badge status-${o.payment_status}">${o.payment_status}</span></td>
-                                        <td>${new Date(o.created_at).toLocaleDateString()}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                        <table><thead><tr><th>Order #</th><th>Customer</th><th>Phone</th><th>Amount</th><th>Payment</th><th>Status</th><th>Date</th></tr></thead><tbody>
+                        ${orders.map(o => `
+                            <tr>
+                                <td>${o.order_number}</td>
+                                <td>${o.customer_name}</td>
+                                <td>${o.customer_phone}</td>
+                                <td>KSh ${o.total_amount.toLocaleString()}</td>
+                                <td><span class="status-badge status-${o.payment_status}">${o.payment_status}</span></td>
+                                <td><span class="status-badge status-${o.status}">${o.status}</span></td>
+                                <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                            </tr>
+                        `).join('')}</tbody></table>
                     `;
                 }
             } catch (error) {
-                console.error('Error loading orders:', error);
                 document.getElementById('ordersTable').innerHTML = '<p style="text-align:center;padding:40px;color:red;">Error loading orders</p>';
             }
         }
         
-        function logout() {
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminUser');
-            window.location.href = '/admin/login';
-        }
-        
+        function logout() { localStorage.removeItem('adminToken'); localStorage.removeItem('adminUser'); window.location.href = '/admin/login'; }
         loadOrders();
     </script>
 </body>
