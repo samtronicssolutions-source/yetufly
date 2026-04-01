@@ -5,8 +5,14 @@ async function getAccessToken() {
   const consumerSecret = process.env.MPESA_CONSUMER_SECRET;
   
   console.log('🔐 Getting M-Pesa access token...');
-  console.log('Consumer Key (first 10 chars):', consumerKey?.substring(0, 10) + '...');
+  console.log('Consumer Key present:', !!consumerKey);
+  console.log('Consumer Secret present:', !!consumerSecret);
   console.log('Environment:', process.env.NODE_ENV);
+  
+  if (!consumerKey || !consumerSecret) {
+    console.error('❌ Missing M-Pesa credentials!');
+    return null;
+  }
   
   const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
   
@@ -38,11 +44,9 @@ function formatPhoneNumber(phone) {
   
   if (formatted.startsWith('0')) {
     formatted = '254' + formatted.substring(1);
-  } else if (formatted.startsWith('254')) {
-    // Already correct format
   } else if (formatted.startsWith('+254')) {
     formatted = formatted.substring(1);
-  } else {
+  } else if (!formatted.startsWith('254')) {
     formatted = '254' + formatted;
   }
   
@@ -58,8 +62,8 @@ async function initiateMpesaPayment(phone, amount, orderNumber) {
   
   const accessToken = await getAccessToken();
   if (!accessToken) {
-    console.error('❌ No access token obtained');
-    return { error: 'Failed to get access token' };
+    console.error('❌ No access token');
+    return { error: true, message: 'Failed to get access token' };
   }
   
   const shortcode = process.env.MPESA_SHORTCODE;
