@@ -8,102 +8,189 @@
     <title>Yetu - Quality Products for Every Home in Kenya</title>
     <meta name="title" content="Yetu - Quality Products for Every Home in Kenya">
     <meta name="description" content="Shop the best quality products in Kenya at Yetu. Find Audio, TV, Accessories, and more. Free shipping on orders over KSh 5,000. Pay with M-Pesa or Cash on Delivery.">
-    <meta name="keywords" content="yetu, ecommerce kenya, online shopping kenya, audio, tv, accessories, electronics, kitchenware, m-pesa payments, cash on delivery kenya">
+    <meta name="keywords" content="yetu, ecommerce kenya, online shopping kenya, audio, tv, accessories, electronics, kitchenware, m-pesa payments">
     <meta name="author" content="Yetu">
     <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
-    <meta name="revisit-after" content="7 days">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://yetu.onrender.com/">
     <meta property="og:title" content="Yetu - Quality Products for Every Home in Kenya">
-    <meta property="og:description" content="Shop the best quality products in Kenya at Yetu. Find Audio, TV, Accessories, and more. Free shipping on orders over KSh 5,000.">
+    <meta property="og:description" content="Shop the best quality products in Kenya at Yetu.">
     <meta property="og:image" content="https://yetu.onrender.com/images/og-image.jpg">
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://yetu.onrender.com/">
-    <meta property="twitter:title" content="Yetu - Quality Products for Every Home in Kenya">
-    <meta property="twitter:description" content="Shop the best quality products in Kenya at Yetu. Find Audio, TV, Accessories, and more.">
-    <meta property="twitter:image" content="https://yetu.onrender.com/images/og-image.jpg">
-    
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://yetu.onrender.com/">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" href="/images/logo/apple-touch-icon.png">
-    
-    <!-- Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     
-    <!-- JSON-LD Structured Data for Organization -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Yetu",
-      "url": "https://yetu.onrender.com",
-      "logo": "https://yetu.onrender.com/images/logo.png",
-      "description": "Quality products for every home in Kenya",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Nairobi",
-        "addressCountry": "KE"
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+254741842196",
-        "contactType": "customer service"
-      },
-      "sameAs": [
-        "https://facebook.com/yetu",
-        "https://twitter.com/yetu",
-        "https://instagram.com/yetu"
-      ]
-    }
-    </script>
-    
-    <!-- JSON-LD for Local Business -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      "name": "Yetu",
-      "image": "https://yetu.onrender.com/images/logo.png",
-      "description": "Quality products for every home in Kenya",
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Nairobi",
-        "addressCountry": "KE"
-      },
-      "geo": {
-        "@type": "GeoCoordinates",
-        "latitude": "-1.286389",
-        "longitude": "36.817223"
-      },
-      "priceRange": "$$",
-      "telephone": "+254741842196"
-    }
-    </script>
+    <style>
+        /* Hero Slider Styles */
+        .hero-slider {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            overflow: hidden;
+        }
+        .slider-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+        }
+        .slide.active {
+            opacity: 1;
+        }
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+        }
+        .slide-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            padding: 20px;
+        }
+        .slide-content h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: fadeInUp 1s ease;
+        }
+        .slide-content p {
+            font-size: 20px;
+            margin-bottom: 30px;
+            animation: fadeInUp 1s ease 0.2s both;
+        }
+        .slide-content .btn-primary {
+            animation: fadeInUp 1s ease 0.4s both;
+        }
+        .slider-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.3);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 24px;
+            z-index: 10;
+            transition: background 0.3s;
+            border-radius: 5px;
+        }
+        .slider-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        .slider-prev {
+            left: 20px;
+        }
+        .slider-next {
+            right: 20px;
+        }
+        .slider-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .dot.active {
+            background: #f57224;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @media (max-width: 768px) {
+            .hero-slider {
+                height: 400px;
+            }
+            .slide-content h2 {
+                font-size: 32px;
+            }
+            .slide-content p {
+                font-size: 16px;
+            }
+            .slider-btn {
+                padding: 10px 15px;
+                font-size: 18px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="header-placeholder"></div>
 
     <main>
-        <section class="hero">
-            <div class="container">
-                <div class="hero-content">
-                    <h1>Yetu - Quality Products for Every Home in Kenya</h1>
-                    <p>Shop the best Audio, TV, Accessories, and more with M-Pesa payments</p>
-                    <a href="/category" class="btn-primary">Shop Now</a>
+        <!-- Hero Slider Section -->
+        <section class="hero-slider">
+            <div class="slider-container">
+                <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1200&h=500&fit=crop');">
+                    <div class="slide-content">
+                        <h2>Premium Electronics</h2>
+                        <p>Discover the latest gadgets and electronics at unbeatable prices</p>
+                        <a href="/category?id=electronics" class="btn-primary">Shop Electronics</a>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1556911220-bff31c812dba?w=1200&h=500&fit=crop');">
+                    <div class="slide-content">
+                        <h2>Modern Kitchenware</h2>
+                        <p>Upgrade your kitchen with high-quality utensils and appliances</p>
+                        <a href="/category?id=kitchen" class="btn-primary">Shop Kitchen</a>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=1200&h=500&fit=crop');">
+                    <div class="slide-content">
+                        <h2>Fun Toys & Games</h2>
+                        <p>Endless fun for kids of all ages with our premium toy collection</p>
+                        <a href="/category?id=toys" class="btn-primary">Shop Toys</a>
+                    </div>
+                </div>
+                <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h=500&fit=crop');">
+                    <div class="slide-content">
+                        <h2>Premium Audio</h2>
+                        <p>Experience crystal clear sound with our audio collection</p>
+                        <a href="/category?id=audio" class="btn-primary">Shop Audio</a>
+                    </div>
                 </div>
             </div>
+            <button class="slider-btn slider-prev"><i class="fas fa-chevron-left"></i></button>
+            <button class="slider-btn slider-next"><i class="fas fa-chevron-right"></i></button>
+            <div class="slider-dots"></div>
         </section>
 
         <section class="products-section">
@@ -125,7 +212,7 @@
             <div class="container">
                 <div class="seo-text">
                     <h2>Why Choose Yetu?</h2>
-                    <p>Yetu is your trusted online shopping destination in Kenya, offering quality products at competitive prices. We specialize in Audio equipment, TV sets, Accessories, and more. Our commitment to excellent quality and customer satisfaction sets us apart.</p>
+                    <p>Yetu is your trusted online shopping destination in Kenya, offering quality products at competitive prices. We specialize in Audio equipment, TV sets, Accessories, and more.</p>
                     
                     <h3>Shop with Confidence</h3>
                     <ul>
@@ -134,9 +221,6 @@
                         <li><i class="fas fa-medal"></i> Quality products guaranteed</li>
                         <li><i class="fas fa-rocket"></i> Fast delivery across Kenya</li>
                     </ul>
-                    
-                    <h3>Popular Categories</h3>
-                    <p>Explore our wide range of products including high-quality Audio systems, modern TV sets, essential Accessories, and more. Whether you're upgrading your home entertainment or looking for the perfect gift, Yetu has something for everyone.</p>
                 </div>
             </div>
         </section>
@@ -147,6 +231,57 @@
     <script src="/js/main.js"></script>
     <script src="/js/cart.js"></script>
     <script>
+        // Hero Slider
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const dotsContainer = document.querySelector('.slider-dots');
+        
+        function createDots() {
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('dot');
+                if (index === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => goToSlide(index));
+                dotsContainer.appendChild(dot);
+            });
+        }
+        
+        function updateDots() {
+            document.querySelectorAll('.dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentSlide);
+            });
+        }
+        
+        function goToSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (index + slides.length) % slides.length;
+            slides[currentSlide].classList.add('active');
+            updateDots();
+        }
+        
+        function nextSlide() {
+            goToSlide(currentSlide + 1);
+        }
+        
+        function prevSlide() {
+            goToSlide(currentSlide - 1);
+        }
+        
+        document.querySelector('.slider-next')?.addEventListener('click', nextSlide);
+        document.querySelector('.slider-prev')?.addEventListener('click', prevSlide);
+        
+        // Auto slide every 5 seconds
+        let autoSlide = setInterval(nextSlide, 5000);
+        
+        // Pause auto slide on hover
+        const slider = document.querySelector('.hero-slider');
+        slider?.addEventListener('mouseenter', () => clearInterval(autoSlide));
+        slider?.addEventListener('mouseleave', () => {
+            autoSlide = setInterval(nextSlide, 5000);
+        });
+        
+        createDots();
+        
         async function loadFeaturedProducts() {
             try {
                 const response = await fetch('/api/products?featured=true');
