@@ -2,7 +2,8 @@ const express = require('express');
 const Product = require('../models/Product');
 const upload = require('../middleware/upload');
 const auth = require('../middleware/auth');
-const { cloudinary } = require('../config/cloudinary');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
@@ -55,7 +56,7 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
     };
     
     if (req.file) {
-      productData.image = req.file.path;
+      productData.image = `/images/products/${req.file.filename}`;
     }
     
     const product = new Product(productData);
@@ -85,18 +86,13 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     product.featured = req.body.featured === 'true';
     
     if (req.file) {
-      // Delete old image from Cloudinary
-      if (product.image && product.image.includes('cloudinary')) {
-        try {
-          const urlParts = product.image.split('/');
-          const filename = urlParts[urlParts.length - 1].split('.')[0];
-          const publicId = `yetu/products/${filename}`;
-          await cloudinary.uploader.destroy(publicId);
-        } catch (err) {
-          console.error('Error deleting old image:', err);
+      if (product.image) {
+        const oldImagePath = path.join(__dirname, '../public', product.image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
         }
       }
-      product.image = req.file.path;
+      product.image = `/images/products/${req.file.filename}`;
     }
     
     await product.save();
@@ -117,15 +113,10 @@ router.delete('/:id', auth, async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
     
-    // Delete image from Cloudinary
-    if (product.image && product.image.includes('cloudinary')) {
-      try {
-        const urlParts = product.image.split('/');
-        const filename = urlParts[urlParts.length - 1].split('.')[0];
-        const publicId = `yetu/products/${filename}`;
-        await cloudinary.uploader.destroy(publicId);
-      } catch (err) {
-        console.error('Error deleting image:', err);
+    if (product.image) {
+      const imagePath = path.join(__dirname, '../public', product.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
       }
     }
     
