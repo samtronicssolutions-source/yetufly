@@ -4,7 +4,6 @@ const session = require('express-session');
 const path = require('path');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-const compression = require('compression');
 const connectDB = require('./config/database');
 
 dotenv.config();
@@ -48,7 +47,7 @@ const initializeDatabase = async () => {
 
 initializeDatabase();
 
-// Security and Performance Headers
+// Security Headers
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -57,9 +56,6 @@ app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
   next();
 });
-
-// Compression
-app.use(compression());
 
 // Middleware
 app.use(cors());
