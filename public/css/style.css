@@ -447,3 +447,73 @@ footer {
         padding: 50px 0;
     }
 }
+
+/* SEO Content Section */
+.seo-content {
+    padding: 60px 0;
+    background: #fff;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+.seo-text {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.seo-text h2 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 28px;
+    font-weight: 600;
+}
+
+.seo-text h3 {
+    color: #f57224;
+    margin: 30px 0 15px;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.seo-text p {
+    color: #666;
+    line-height: 1.8;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.seo-text ul {
+    list-style: none;
+    display: inline-block;
+    text-align: left;
+    margin: 20px auto;
+    padding: 0;
+}
+
+.seo-text ul li {
+    margin: 12px 0;
+    color: #666;
+    font-size: 16px;
+}
+
+.seo-text ul li i {
+    color: #27ae60;
+    margin-right: 10px;
+    width: 20px;
+}
+
+@media (max-width: 768px) {
+    .seo-content {
+        padding: 40px 0;
+    }
+    .seo-text h2 {
+        font-size: 24px;
+    }
+    .seo-text h3 {
+        font-size: 20px;
+    }
+    .seo-text p, .seo-text ul li {
+        font-size: 14px;
+    }
+}
