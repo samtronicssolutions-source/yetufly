@@ -210,3 +210,31 @@ router.post('/mpesa-callback', async (req, res) => {
 });
 
 module.exports = router;
+// TEMPORARY: Test M-Pesa credentials (remove after testing)
+router.get('/test-mpesa', async (req, res) => {
+  try {
+    const { initiateMpesaPayment, getAccessToken } = require('../utils/mpesa');
+    
+    // Test access token
+    const token = await getAccessToken();
+    if (!token) {
+      return res.json({ success: false, message: 'Failed to get access token' });
+    }
+    
+    // Test STK push with test phone
+    const testPhone = '254708374149';
+    const testAmount = 10;
+    const testOrder = `TEST-${Date.now()}`;
+    
+    const result = await initiateMpesaPayment(testPhone, testAmount, testOrder);
+    
+    res.json({
+      success: !!result,
+      token_received: !!token,
+      stk_result: result,
+      message: result?.ResponseDescription || result?.message || 'Test completed'
+    });
+  } catch (error) {
+    res.json({ success: false, error: error.message });
+  }
+});
