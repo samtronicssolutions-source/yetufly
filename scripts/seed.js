@@ -21,7 +21,9 @@ const seedDatabase = async () => {
       { name: 'Audio', parent_id: null },
       { name: 'TV', parent_id: null },
       { name: 'Accessories', parent_id: null },
-      { name: 'Utensils', parent_id: null }
+      { name: 'Utensils', parent_id: null },
+      { name: 'Electronics', parent_id: null },
+      { name: 'Kitchen', parent_id: null }
     ];
     
     const createdCategories = [];
@@ -33,6 +35,7 @@ const seedDatabase = async () => {
     
     const utensilsCategory = createdCategories.find(c => c.name === 'Utensils');
     const audioCategory = createdCategories.find(c => c.name === 'Audio');
+    const accessoriesCategory = createdCategories.find(c => c.name === 'Accessories');
     
     const utensilsSubs = ['Knives', 'Cookware', 'Cutlery', 'Kitchen Tools'];
     for (const sub of utensilsSubs) {
@@ -44,6 +47,12 @@ const seedDatabase = async () => {
     for (const sub of audioSubs) {
       await Category.create({ name: sub, parent_id: audioCategory._id });
       console.log(`  ✅ Created subcategory: ${sub} (under Audio)`);
+    }
+    
+    const accessoriesSubs = ['Chargers', 'Cables', 'Power Banks', 'Adapters'];
+    for (const sub of accessoriesSubs) {
+      await Category.create({ name: sub, parent_id: accessoriesCategory._id });
+      console.log(`  ✅ Created subcategory: ${sub} (under Accessories)`);
     }
     
     console.log('👤 Creating admin user...');
@@ -62,6 +71,10 @@ const seedDatabase = async () => {
     console.log('\n🔑 Admin Login:');
     console.log('   Username: admin');
     console.log('   Password: admin123');
+    console.log('\n📸 To add products:');
+    console.log('   1. Login to admin panel');
+    console.log('   2. Click "Add New Product"');
+    console.log('   3. Upload product image');
     
     process.exit(0);
   } catch (error) {
