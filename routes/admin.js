@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 
 const router = express.Router();
 
+// Get dashboard stats
 router.get('/stats', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -36,6 +37,7 @@ router.get('/stats', auth, async (req, res) => {
   }
 });
 
+// Get all orders
 router.get('/orders', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -51,6 +53,7 @@ router.get('/orders', auth, async (req, res) => {
   }
 });
 
+// Update order status
 router.put('/orders/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -66,6 +69,34 @@ router.put('/orders/:id', auth, async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Order not found' });
     res.json(order);
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear processed orders (completed, delivered, or paid orders)
+router.delete('/clear-processed-orders', auth, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    // Delete orders that are completed, delivered, or have completed payment
+    const result = await Order.deleteMany({
+      $or: [
+        { status: 'completed' },
+        { status: 'delivered' },
+        { status: 'processing' },
+        { payment_status: 'completed' }
+      ]
+    });
+    
+    res.json({
+      success: true,
+      deletedCount: result.deletedCount,
+      message: `Successfully cleared ${result.deletedCount} processed orders`
+    });
+  } catch (error) {
+    console.error('Error clearing orders:', error);
     res.status(500).json({ error: error.message });
   }
 });
