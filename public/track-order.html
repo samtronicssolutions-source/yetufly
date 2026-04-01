@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Order - Yetu Kenya</title>
+    <meta name="description" content="Track your Yetu order status online. Enter your order number to see shipping updates.">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .page-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .page-container h1 {
+            color: #f57224;
+            margin-bottom: 30px;
+        }
+        .track-form {
+            margin: 30px 0;
+        }
+        .track-form input {
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .track-form button {
+            background: #f57224;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .order-details {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            display: none;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-processing { background: #cce5ff; color: #004085; }
+        .status-shipped { background: #d4edda; color: #155724; }
+        .status-delivered { background: #d1ecf1; color: #0c5460; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 20px;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <main>
+        <div class="container">
+            <div class="page-container">
+                <h1>Track Your Order</h1>
+                <p>Enter your order number to check the status of your delivery.</p>
+                
+                <div class="track-form">
+                    <input type="text" id="orderNumber" placeholder="Order Number (e.g., ORD-123456789-ABC123)" required>
+                    <button onclick="trackOrder()">Track Order</button>
+                </div>
+                
+                <div id="orderDetails" class="order-details"></div>
+            </div>
+        </div>
+    </main>
+    <div id="footer-placeholder"></div>
+    <script>
+        fetch('/header.html').then(r => r.text()).then(h => document.getElementById('header-placeholder').innerHTML = h);
+        fetch('/footer.html').then(r => r.text()).then(f => document.getElementById('footer-placeholder').innerHTML = f);
+        
+        async function trackOrder() {
+            const orderNumber = document.getElementById('orderNumber').value.trim();
+            if (!orderNumber) {
+                alert('Please enter your order number');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/orders/${orderNumber}`);
+                if (response.ok) {
+                    const order = await response.json();
+                    displayOrder(order);
+                } else {
+                    document.getElementById('orderDetails').innerHTML = '<p style="color: red;">Order not found. Please check your order number.</p>';
+                    document.getElementById('orderDetails').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('orderDetails').innerHTML = '<p style="color: red;">Error tracking order. Please try again.</p>';
+                document.getElementById('orderDetails').style.display = 'block';
+            }
+        }
+        
+        function displayOrder(order) {
+            const statusClass = `status-${order.status}`;
+            const statusText = order.status.charAt(0).toUpperCase() + order.status.slice(1);
+            
+            document.getElementById('orderDetails').innerHTML = `
+                <h3>Order #${order.order_number}</h3>
+                <p><strong>Status:</strong> <span class="status-badge ${statusClass}">${statusText}</span></p>
+                <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
+                <p><strong>Total:</strong> KSh ${order.total_amount.toLocaleString()}</p>
+                <p><strong>Payment Method:</strong> ${order.payment_method.toUpperCase()}</p>
+                <p><strong>Payment Status:</strong> ${order.payment_status}</p>
+                <hr>
+                <h4>Items:</h4>
+                <ul>
+                    ${order.items.map(item => `
+                        <li>${item.product_id?.name || 'Product'} x ${item.quantity} - KSh ${(item.price * item.quantity).toLocaleString()}</li>
+                    `).join('')}
+                </ul>
+                <hr>
+                <p><strong>Shipping Address:</strong><br>${order.customer_name}<br>${order.customer_phone}<br>${order.customer_email}</p>
+            `;
+            document.getElementById('orderDetails').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
