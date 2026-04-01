@@ -88,6 +88,27 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        .payment-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .payment-status.waiting {
+            background: #fff3cd;
+            color: #856404;
+            display: block;
+        }
+        .payment-status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        .payment-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
         @media (max-width: 768px) {
             .checkout-container {
                 grid-template-columns: 1fr;
@@ -101,16 +122,24 @@
         <div class="container">
             <h1>Checkout</h1>
             <div id="checkoutContent"></div>
+            <div id="paymentStatus" class="payment-status"></div>
         </div>
     </main>
     <div id="footer-placeholder"></div>
     <script src="/js/main.js"></script>
     <script src="/js/cart.js"></script>
     <script>
+        let checkoutInterval = null;
+        let currentCheckoutId = null;
+        
         async function loadCheckout() {
             const cart = getCart();
             const ids = Object.keys(cart);
-            if (!ids.length) { window.location.href = '/cart'; return; }
+            
+            if (!ids.length) {
+                window.location.href = '/cart';
+                return;
+            }
             
             try {
                 const items = [];
@@ -150,16 +179,20 @@
                                     </select>
                                 </div>
                                 <div class="mpesa-note" id="mpesaNote">
-                                    <i class="fas fa-info-circle"></i> For M-Pesa payments, you will receive a payment request on your phone.
+                                    <i class="fas fa-info-circle"></i> 
+                                    For M-Pesa payments, you will receive a payment request on your phone. 
+                                    Enter your PIN to complete payment. Order will be created after successful payment.
                                 </div>
-                                <button type="submit" class="btn-place-order" id="placeOrderBtn">Place Order</button>
+                                <button type="submit" class="btn-place-order" id="placeOrderBtn">
+                                    <i class="fas fa-check"></i> Place Order
+                                </button>
                             </form>
                         </div>
                         <div class="order-summary">
                             <h2>Order Summary</h2>
                             ${items.map(i => `
                                 <div class="summary-item">
-                                    <span>${i.name} x ${i.quantity}</span>
+                                    <span>${escapeHtml(i.name)} x ${i.quantity}</span>
                                     <span>KSh ${i.subtotal.toLocaleString()}</span>
                                 </div>
                             `).join('')}
@@ -173,6 +206,7 @@
                 
                 const paymentSelect = document.getElementById('paymentMethod');
                 const mpesaNote = document.getElementById('mpesaNote');
+                
                 paymentSelect.addEventListener('change', () => {
                     mpesaNote.style.display = paymentSelect.value === 'mpesa' ? 'block' : 'none';
                 });
@@ -182,7 +216,9 @@
                     await placeOrder(total);
                 });
                 
-            } catch (error) { console.error(error); }
+            } catch (error) {
+                console.error('Error loading checkout:', error);
+            }
         }
         
         async function placeOrder(total) {
@@ -191,6 +227,7 @@
             const email = document.getElementById('email').value.trim();
             const paymentMethod = document.getElementById('paymentMethod').value;
             const submitBtn = document.getElementById('placeOrderBtn');
+            const statusDiv = document.getElementById('paymentStatus');
             
             if (!name || !phone || !email) {
                 showNotification('Please fill all fields', 'error');
@@ -224,44 +261,138 @@
                 
                 const result = await response.json();
                 
-                if (result.success) {
-                    localStorage.removeItem('cart');
-                    updateCartCount();
-                    
-                    if (paymentMethod === 'mpesa') {
-                        if (result.payment_initiated === false) {
-                            showNotification('Payment initiation failed. Please try again.', 'error');
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = 'Place Order';
-                        } else {
-                            showNotification('Payment request sent to your phone!', 'success');
-                            localStorage.setItem('lastPaymentMethod', 'mpesa');
-                            setTimeout(() => {
-                                window.location.href = `/order-success?order=${result.order_number}`;
-                            }, 5000);
-                        }
-                    } else {
+                if (paymentMethod === 'mpesa') {
+                    if (result.waiting_for_payment) {
+                        // Show waiting status
+                        statusDiv.className = 'payment-status waiting';
+                        statusDiv.innerHTML = `
+                            <i class="fas fa-clock"></i> 
+                            <strong>Payment Initiated!</strong><br>
+                            Please check your phone (${phone}) and enter your PIN to complete payment.<br>
+                            Waiting for confirmation...
+                        `;
+                        
+                        // Start polling for payment status
+                        currentCheckoutId = result.checkout_id;
+                        startPollingPaymentStatus(currentCheckoutId);
+                        
+                        // Clear cart
+                        localStorage.removeItem('cart');
+                        updateCartCount();
+                        
+                    } else if (result.success && result.order_number) {
+                        // Direct success (shouldn't happen for M-Pesa)
+                        localStorage.removeItem('cart');
                         window.location.href = `/order-success?order=${result.order_number}`;
+                    } else {
+                        showNotification(result.error || 'Payment initiation failed', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
                     }
-                } else {
-                    showNotification(result.error || 'Order failed', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Place Order';
+                } else if (paymentMethod === 'cod') {
+                    if (result.success) {
+                        localStorage.removeItem('cart');
+                        window.location.href = `/order-success?order=${result.order_number}`;
+                    } else {
+                        showNotification(result.error || 'Order failed', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+                    }
                 }
+                
             } catch (error) {
+                console.error('Error placing order:', error);
                 showNotification('Network error. Please try again.', 'error');
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Place Order';
+                submitBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
             }
         }
         
+        function startPollingPaymentStatus(checkoutId) {
+            let attempts = 0;
+            const maxAttempts = 30; // 30 attempts (5 minutes)
+            
+            checkoutInterval = setInterval(async () => {
+                attempts++;
+                
+                try {
+                    const response = await fetch(`/api/orders/payment-status/${checkoutId}`);
+                    const result = await response.json();
+                    
+                    if (result.status === 'completed') {
+                        // Payment successful
+                        clearInterval(checkoutInterval);
+                        const statusDiv = document.getElementById('paymentStatus');
+                        statusDiv.className = 'payment-status success';
+                        statusDiv.innerHTML = `
+                            <i class="fas fa-check-circle"></i> 
+                            <strong>Payment Successful!</strong><br>
+                            Your order ${result.order_number} has been confirmed.<br>
+                            Redirecting to order confirmation...
+                        `;
+                        
+                        setTimeout(() => {
+                            window.location.href = `/order-success?order=${result.order_number}`;
+                        }, 3000);
+                        
+                    } else if (result.status === 'failed') {
+                        // Payment failed
+                        clearInterval(checkoutInterval);
+                        const statusDiv = document.getElementById('paymentStatus');
+                        statusDiv.className = 'payment-status failed';
+                        statusDiv.innerHTML = `
+                            <i class="fas fa-times-circle"></i> 
+                            <strong>Payment Failed</strong><br>
+                            ${result.message || 'Payment was not completed. Please try again.'}<br>
+                            <a href="/cart" class="btn-primary" style="margin-top: 10px; display: inline-block;">Return to Cart</a>
+                        `;
+                        
+                        // Re-enable button
+                        document.getElementById('placeOrderBtn').disabled = false;
+                        document.getElementById('placeOrderBtn').innerHTML = '<i class="fas fa-check"></i> Place Order';
+                        
+                    } else if (attempts >= maxAttempts) {
+                        // Timeout
+                        clearInterval(checkoutInterval);
+                        const statusDiv = document.getElementById('paymentStatus');
+                        statusDiv.className = 'payment-status failed';
+                        statusDiv.innerHTML = `
+                            <i class="fas fa-clock"></i> 
+                            <strong>Payment Timeout</strong><br>
+                            Payment confirmation not received. Please contact support or try again.<br>
+                            <a href="/cart" class="btn-primary" style="margin-top: 10px; display: inline-block;">Return to Cart</a>
+                        `;
+                    }
+                    
+                } catch (error) {
+                    console.error('Error checking payment status:', error);
+                }
+            }, 10000); // Check every 10 seconds
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
         async function loadHeaderFooter() {
-            const header = await (await fetch('/header.html')).text();
-            const footer = await (await fetch('/footer.html')).text();
-            document.getElementById('header-placeholder').innerHTML = header;
-            document.getElementById('footer-placeholder').innerHTML = footer;
-            updateCartCount();
-            if (typeof loadNavCategories === 'function') loadNavCategories();
+            try {
+                const headerRes = await fetch('/header.html');
+                const footerRes = await fetch('/footer.html');
+                const header = await headerRes.text();
+                const footer = await footerRes.text();
+                document.getElementById('header-placeholder').innerHTML = header;
+                document.getElementById('footer-placeholder').innerHTML = footer;
+                updateCartCount();
+                if (typeof loadNavCategories === 'function') loadNavCategories();
+            } catch (error) {
+                console.error('Error loading header/footer:', error);
+            }
         }
         
         loadHeaderFooter();
