@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details - Yetu</title>
+    <title>Product Details - Yetu Kenya</title>
+    <meta name="description" content="Shop quality products in Kenya at Yetu. Best prices, fast delivery, M-Pesa payments.">
+    <meta name="robots" content="index, follow">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <style>
@@ -68,6 +70,104 @@
             }
         }
     </style>
+    <script>
+        // Dynamic SEO for Product Pages
+        let currentProduct = null;
+        
+        function updateProductSEO(product) {
+            document.title = `${product.name} - Yetu Kenya | Best Price in Kenya`;
+            
+            let metaDesc = document.querySelector('meta[name="description"]');
+            if (!metaDesc) {
+                metaDesc = document.createElement('meta');
+                metaDesc.name = 'description';
+                document.head.appendChild(metaDesc);
+            }
+            const description = product.description ? product.description.substring(0, 155) : `Buy ${product.name} at the best price in Kenya. Quality guaranteed, fast delivery, M-Pesa payments accepted.`;
+            metaDesc.content = description;
+            
+            let metaKeywords = document.querySelector('meta[name="keywords"]');
+            if (!metaKeywords) {
+                metaKeywords = document.createElement('meta');
+                metaKeywords.name = 'keywords';
+                document.head.appendChild(metaKeywords);
+            }
+            metaKeywords.content = `${product.name}, buy ${product.name} in kenya, ${product.category_id?.name || 'product'}, yetu kenya, online shopping kenya`;
+            
+            let ogTitle = document.querySelector('meta[property="og:title"]');
+            if (!ogTitle) {
+                ogTitle = document.createElement('meta');
+                ogTitle.setAttribute('property', 'og:title');
+                document.head.appendChild(ogTitle);
+            }
+            ogTitle.content = `${product.name} - Yetu Kenya`;
+            
+            let ogDesc = document.querySelector('meta[property="og:description"]');
+            if (!ogDesc) {
+                ogDesc = document.createElement('meta');
+                ogDesc.setAttribute('property', 'og:description');
+                document.head.appendChild(ogDesc);
+            }
+            ogDesc.content = description;
+            
+            let ogUrl = document.querySelector('meta[property="og:url"]');
+            if (!ogUrl) {
+                ogUrl = document.createElement('meta');
+                ogUrl.setAttribute('property', 'og:url');
+                document.head.appendChild(ogUrl);
+            }
+            ogUrl.content = window.location.href;
+            
+            let ogImage = document.querySelector('meta[property="og:image"]');
+            if (!ogImage) {
+                ogImage = document.createElement('meta');
+                ogImage.setAttribute('property', 'og:image');
+                document.head.appendChild(ogImage);
+            }
+            ogImage.content = product.image || 'https://yetu.onrender.com/images/og-image.jpg';
+            
+            const existingScript = document.querySelector('#product-schema');
+            if (existingScript) existingScript.remove();
+            
+            const script = document.createElement('script');
+            script.id = 'product-schema';
+            script.type = 'application/ld+json';
+            script.textContent = JSON.stringify({
+                "@context": "https://schema.org/",
+                "@type": "Product",
+                "name": product.name,
+                "image": product.image || 'https://yetu.onrender.com/images/placeholder.jpg',
+                "description": product.description,
+                "sku": product._id,
+                "mpn": product._id,
+                "brand": {
+                    "@type": "Brand",
+                    "name": "Yetu"
+                },
+                "offers": {
+                    "@type": "Offer",
+                    "priceCurrency": "KES",
+                    "price": product.price,
+                    "priceValidUntil": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                    "url": window.location.href,
+                    "shippingDetails": {
+                        "@type": "OfferShippingDetails",
+                        "shippingRate": {
+                            "@type": "MonetaryAmount",
+                            "value": "0",
+                            "currency": "KES"
+                        },
+                        "shippingDestination": {
+                            "@type": "DefinedRegion",
+                            "addressCountry": "KE"
+                        }
+                    }
+                }
+            });
+            document.head.appendChild(script);
+        }
+    </script>
 </head>
 <body>
     <div id="header-placeholder"></div>
@@ -87,13 +187,16 @@
             try {
                 const res = await fetch(`/api/products/${productId}`);
                 const p = await res.json();
+                currentProduct = p;
+                updateProductSEO(p);
+                
                 document.getElementById('productContent').innerHTML = `
                     <div class="product-detail">
-                        <div><img src="${p.image || '/images/products/placeholder.jpg'}" class="product-main-image" onerror="this.src='/images/products/placeholder.jpg'"></div>
+                        <div><img src="${p.image || '/images/products/placeholder.jpg'}" class="product-main-image" onerror="this.src='/images/products/placeholder.jpg'" alt="${p.name}"></div>
                         <div>
-                            <h1>${p.name}</h1>
+                            <h1>${escapeHtml(p.name)}</h1>
                             <div class="product-price">KSh ${p.price.toLocaleString()}</div>
-                            <div class="product-description">${p.description}</div>
+                            <div class="product-description">${escapeHtml(p.description)}</div>
                             <div class="stock-status ${p.stock > 0 ? 'in-stock' : 'out-of-stock'}">
                                 ${p.stock > 0 ? `✓ In Stock (${p.stock} available)` : '✗ Out of Stock'}
                             </div>
@@ -124,10 +227,10 @@
                     ${related.map(p => `
                         <div class="product-card">
                             <div class="product-image">
-                                <a href="/product/${p._id}"><img src="${p.image || '/images/products/placeholder.jpg'}" onerror="this.src='/images/products/placeholder.jpg'"></a>
+                                <a href="/product/${p._id}"><img src="${p.image || '/images/products/placeholder.jpg'}" alt="${p.name}" loading="lazy" onerror="this.src='/images/products/placeholder.jpg'"></a>
                             </div>
                             <div class="product-info">
-                                <h3><a href="/product/${p._id}">${p.name}</a></h3>
+                                <h3><a href="/product/${p._id}">${escapeHtml(p.name)}</a></h3>
                                 <p class="price">KSh ${p.price.toLocaleString()}</p>
                                 <button onclick="addToCart('${p._id}')" class="btn-add-to-cart">Add to Cart</button>
                             </div>
@@ -139,6 +242,16 @@
         
         function addToCartWithQty(id) {
             addToCart(id, parseInt(document.getElementById('quantity').value));
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
         }
         
         async function loadHeaderFooter() {
