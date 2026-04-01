@@ -4,27 +4,21 @@ const session = require('express-session');
 const path = require('path');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const compression = require('compression');
 const connectDB = require('./config/database');
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Database connection state
 let dbConnected = false;
 let connectionRetryInterval = null;
 
-// ============================================
-// DATABASE CONNECTION WITH AUTO-RECONNECT
-// ============================================
 const initializeDatabase = async () => {
   try {
     await connectDB();
     dbConnected = true;
     console.log('✅ Database connected successfully');
-    
-    // Clear retry interval if connection successful
     if (connectionRetryInterval) {
       clearInterval(connectionRetryInterval);
       connectionRetryInterval = null;
@@ -32,9 +26,6 @@ const initializeDatabase = async () => {
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
     dbConnected = false;
-    console.log('⚠️ Server will start without database. Retrying connection every 10 seconds...');
-    
-    // Retry connection every 10 seconds
     if (!connectionRetryInterval) {
       connectionRetryInterval = setInterval(async () => {
         if (!dbConnected) {
@@ -55,19 +46,28 @@ const initializeDatabase = async () => {
   }
 };
 
-// Start database connection
 initializeDatabase();
 
-// ============================================
-// MIDDLEWARE
-// ============================================
+// Security and Performance Headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
+
+// Compression
+app.use(compression());
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
-// Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
@@ -79,18 +79,14 @@ app.use(session({
   }
 }));
 
-// ============================================
-// IMPORT ROUTES
-// ============================================
+// Import routes
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
 const orderRoutes = require('./routes/orders');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 
-// ============================================
-// API ROUTES
-// ============================================
+// API routes
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/orders', orderRoutes);
@@ -98,54 +94,64 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ============================================
-// HEALTH CHECK ENDPOINT
+// SITEMAP GENERATOR
 // ============================================
-app.get('/health', async (req, res) => {
-  let dbStatus = 'unknown';
+app.get('/sitemap.xml', async (req, res) => {
   try {
-    if (mongoose.connection.readyState === 1) {
-      dbStatus = 'connected';
-    } else if (mongoose.connection.readyState === 2) {
-      dbStatus = 'connecting';
-    } else if (mongoose.connection.readyState === 0) {
-      dbStatus = 'disconnected';
-    } else {
-      dbStatus = 'unknown';
-    }
-  } catch (error) {
-    dbStatus = 'error';
-  }
-  
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    database: dbStatus,
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
-
-// ============================================
-// DATABASE STATUS ENDPOINT
-// ============================================
-app.get('/api/db-status', async (req, res) => {
-  try {
-    const dbState = mongoose.connection.readyState;
-    const states = {
-      0: 'disconnected',
-      1: 'connected',
-      2: 'connecting',
-      3: 'disconnecting'
-    };
-    res.json({
-      status: states[dbState] || 'unknown',
-      readyState: dbState,
-      host: mongoose.connection.host || 'not connected',
-      name: mongoose.connection.name || 'not connected',
-      models: Object.keys(mongoose.models)
+    const Category = require('./models/Category');
+    const Product = require('./models/Product');
+    
+    const baseUrl = 'https://yetu.onrender.com';
+    const categories = await Category.find({ parent_id: null });
+    const products = await Product.find();
+    
+    let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    
+    // Static pages
+    const staticPages = [
+      { url: '', priority: 1.0, changefreq: 'daily' },
+      { url: '/category', priority: 0.9, changefreq: 'daily' },
+      { url: '/cart', priority: 0.5, changefreq: 'monthly' },
+      { url: '/checkout', priority: 0.5, changefreq: 'monthly' }
+    ];
+    
+    staticPages.forEach(page => {
+      sitemap += `  <url>\n`;
+      sitemap += `    <loc>${baseUrl}${page.url}</loc>\n`;
+      sitemap += `    <changefreq>${page.changefreq}</changefreq>\n`;
+      sitemap += `    <priority>${page.priority}</priority>\n`;
+      sitemap += `  </url>\n`;
     });
+    
+    // Category pages
+    categories.forEach(cat => {
+      sitemap += `  <url>\n`;
+      sitemap += `    <loc>${baseUrl}/category?id=${cat._id}</loc>\n`;
+      sitemap += `    <changefreq>weekly</changefreq>\n`;
+      sitemap += `    <priority>0.7</priority>\n`;
+      sitemap += `  </url>\n`;
+    });
+    
+    // Product pages
+    products.forEach(product => {
+      sitemap += `  <url>\n`;
+      sitemap += `    <loc>${baseUrl}/product/${product._id}</loc>\n`;
+      if (product.created_at) {
+        sitemap += `    <lastmod>${new Date(product.created_at).toISOString()}</lastmod>\n`;
+      }
+      sitemap += `    <changefreq>weekly</changefreq>\n`;
+      sitemap += `    <priority>0.6</priority>\n`;
+      sitemap += `  </url>\n`;
+    });
+    
+    sitemap += '</urlset>';
+    
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemap);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Sitemap error:', error);
+    res.status(500).send('Error generating sitemap');
   }
 });
 
@@ -176,9 +182,6 @@ app.get('/category', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'category.html'));
 });
 
-// ============================================
-// ADMIN ROUTES
-// ============================================
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'dashboard.html'));
 });
@@ -195,88 +198,54 @@ app.get('/admin/orders', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'orders.html'));
 });
 
+app.get('/robots.txt', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  let dbStatus = 'unknown';
+  try {
+    if (mongoose.connection.readyState === 1) dbStatus = 'connected';
+    else if (mongoose.connection.readyState === 2) dbStatus = 'connecting';
+    else if (mongoose.connection.readyState === 0) dbStatus = 'disconnected';
+  } catch (error) {
+    dbStatus = 'error';
+  }
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    database: dbStatus,
+    uptime: process.uptime()
+  });
+});
+
 // ============================================
-// 404 HANDLER - Must be last
+// 404 HANDLER FOR HTML PAGES
 // ============================================
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
+// API 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// ============================================
-// ERROR HANDLING MIDDLEWARE
-// ============================================
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('❌ Server Error:', err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
+  res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// ============================================
-// START SERVER
-// ============================================
 const PORT = process.env.PORT || 3000;
-
-const server = app.listen(PORT, () => {
-  console.log(`\n🚀 Server Started Successfully!`);
-  console.log(`========================================`);
-  console.log(`📡 Server running on port: ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 URL: http://localhost:${PORT}`);
-  console.log(`🖥️  Admin Login: http://localhost:${PORT}/admin/login`);
-  console.log(`💚 Health Check: http://localhost:${PORT}/health`);
-  console.log(`========================================\n`);
-});
-
-// ============================================
-// GRACEFUL SHUTDOWN
-// ============================================
-const gracefulShutdown = async (signal) => {
-  console.log(`\n⚠️ Received ${signal}, starting graceful shutdown...`);
-  
-  // Stop accepting new connections
-  server.close(async () => {
-    console.log('✅ HTTP server closed');
-    
-    // Close database connection
-    try {
-      await mongoose.connection.close();
-      console.log('✅ MongoDB connection closed');
-    } catch (err) {
-      console.error('❌ Error closing MongoDB connection:', err);
-    }
-    
-    // Clear retry interval
-    if (connectionRetryInterval) {
-      clearInterval(connectionRetryInterval);
-    }
-    
-    console.log('👋 Graceful shutdown complete');
-    process.exit(0);
-  });
-  
-  // Force close after 10 seconds
-  setTimeout(() => {
-    console.error('⚠️ Could not close connections in time, forcing shutdown');
-    process.exit(1);
-  }, 10000);
-};
-
-// Listen for shutdown signals
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
-  gracefulShutdown('uncaughtException');
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-  gracefulShutdown('unhandledRejection');
+  console.log(`🔗 URL: http://localhost:${PORT}\n`);
 });
 
 module.exports = app;
