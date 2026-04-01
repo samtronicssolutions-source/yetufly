@@ -20,6 +20,15 @@ function formatPhoneNumber(phone) {
 }
 
 // ============================================
+// DEBUG: Test callback endpoint
+// ============================================
+router.post('/test-callback', (req, res) => {
+  console.log('🧪 TEST CALLBACK RECEIVED!');
+  console.log('Body:', JSON.stringify(req.body, null, 2));
+  res.json({ received: true });
+});
+
+// ============================================
 // CREATE ORDER - WAIT FOR PAYMENT CONFIRMATION
 // ============================================
 router.post('/', async (req, res) => {
@@ -61,9 +70,6 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Generate temporary order number
-    const tempOrderNumber = `TEMP-${Date.now()}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
-    
     // For Cash on Delivery - create order immediately
     if (payment_method === 'cod') {
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
@@ -101,44 +107,46 @@ router.post('/', async (req, res) => {
       const formattedPhone = formatPhoneNumber(customer_phone);
       console.log('Initiating M-Pesa payment for phone:', formattedPhone);
       console.log('Amount:', total);
+      console.log('Callback URL:', `${process.env.BASE_URL}/api/orders/mpesa-callback`);
       
-      const mpesaResponse = await initiateMpesaPayment(formattedPhone, total, tempOrderNumber);
+      const mpesaResponse = await initiateMpesaPayment(formattedPhone, total, `TEMP-${Date.now()}`);
       
       console.log('M-Pesa Response:', JSON.stringify(mpesaResponse, null, 2));
       
       if (mpesaResponse && !mpesaResponse.error && mpesaResponse.ResponseCode === '0') {
-        // Store pending order data temporarily (could use Redis or in-memory)
-        // For now, store in a temporary collection or use a simple object
+        const checkoutId = mpesaResponse.CheckoutRequestID;
+        
+        // Store pending order data
         const pendingOrder = {
-          tempOrderNumber,
+          tempId: checkoutId,
           customer_name,
           customer_phone,
           customer_email,
           items: orderItems,
           total_amount: total,
-          checkout_id: mpesaResponse.CheckoutRequestID,
+          checkout_id: checkoutId,
           created_at: new Date()
         };
         
-        // Store in a temporary collection or use global variable
-        // For production, use Redis or a database collection
+        // Store in memory (for production, use Redis)
         if (!global.pendingOrders) global.pendingOrders = {};
-        global.pendingOrders[mpesaResponse.CheckoutRequestID] = pendingOrder;
+        global.pendingOrders[checkoutId] = pendingOrder;
+        
+        console.log(`✅ M-Pesa initiated. Checkout ID: ${checkoutId}`);
+        console.log(`⏳ Waiting for callback...`);
         
         // Set timeout to clean up if payment fails (10 minutes)
         setTimeout(() => {
-          if (global.pendingOrders[mpesaResponse.CheckoutRequestID]) {
-            delete global.pendingOrders[mpesaResponse.CheckoutRequestID];
-            console.log(`⏰ Cleaned up pending order: ${mpesaResponse.CheckoutRequestID}`);
+          if (global.pendingOrders[checkoutId]) {
+            delete global.pendingOrders[checkoutId];
+            console.log(`⏰ Cleaned up pending order: ${checkoutId}`);
           }
         }, 10 * 60 * 1000);
-        
-        console.log(`✅ M-Pesa initiated. Waiting for payment confirmation...`);
         
         return res.json({
           success: true,
           waiting_for_payment: true,
-          checkout_id: mpesaResponse.CheckoutRequestID,
+          checkout_id: checkoutId,
           message: 'M-Pesa payment initiated. Please check your phone and enter PIN to complete payment.'
         });
       } else {
@@ -162,10 +170,12 @@ router.post('/', async (req, res) => {
 router.get('/payment-status/:checkoutId', async (req, res) => {
   try {
     const { checkoutId } = req.params;
+    console.log(`🔍 Checking payment status for: ${checkoutId}`);
     
     // Check if order was already created (successful payment)
     const existingOrder = await Order.findOne({ mpesa_transaction_id: checkoutId });
     if (existingOrder) {
+      console.log(`✅ Order found: ${existingOrder.order_number}`);
       return res.json({
         success: true,
         status: 'completed',
@@ -176,6 +186,7 @@ router.get('/payment-status/:checkoutId', async (req, res) => {
     
     // Check pending order
     if (global.pendingOrders && global.pendingOrders[checkoutId]) {
+      console.log(`⏳ Payment still pending for: ${checkoutId}`);
       return res.json({
         success: true,
         status: 'pending',
@@ -183,15 +194,7 @@ router.get('/payment-status/:checkoutId', async (req, res) => {
       });
     }
     
-    // Check if payment failed (callback would have cleaned up)
-    if (global.failedPayments && global.failedPayments[checkoutId]) {
-      return res.json({
-        success: false,
-        status: 'failed',
-        message: 'Payment failed. Please try again.'
-      });
-    }
-    
+    console.log(`❌ No order found for: ${checkoutId}`);
     return res.json({
       success: false,
       status: 'unknown',
@@ -205,18 +208,19 @@ router.get('/payment-status/:checkoutId', async (req, res) => {
 });
 
 // ============================================
-// M-PESA CALLBACK - CREATE ORDER ON SUCCESSFUL PAYMENT
+// M-PESA CALLBACK - CRITICAL: This must work
 // ============================================
 router.post('/mpesa-callback', async (req, res) => {
   try {
     console.log('\n📞 ========== M-PESA CALLBACK RECEIVED ==========');
     console.log('Timestamp:', new Date().toISOString());
-    console.log('Callback Data:', JSON.stringify(req.body, null, 2));
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Full Body:', JSON.stringify(req.body, null, 2));
     
     const data = req.body;
     
     if (!data.Body || !data.Body.stkCallback) {
-      console.log('⚠️ Invalid callback structure');
+      console.log('⚠️ Invalid callback structure - missing stkCallback');
       return res.json({ ResultCode: 1, ResultDesc: 'Invalid callback structure' });
     }
     
@@ -225,26 +229,29 @@ router.post('/mpesa-callback', async (req, res) => {
     const checkoutId = callback.CheckoutRequestID;
     const resultDesc = callback.ResultDesc;
     
-    console.log(`Callback Details:`);
+    console.log(`\n📋 Callback Details:`);
     console.log(`  Checkout ID: ${checkoutId}`);
     console.log(`  Result Code: ${resultCode}`);
-    console.log(`  Result Desc: ${resultDesc}`);
+    console.log(`  Result Description: ${resultDesc}`);
     
-    // Check if this is a pending order waiting for confirmation
+    // Check if there's a pending order waiting for this checkout ID
     const pendingOrder = global.pendingOrders ? global.pendingOrders[checkoutId] : null;
     
     if (resultCode === 0) {
-      // PAYMENT SUCCESSFUL - Create the actual order
+      // PAYMENT SUCCESSFUL
+      console.log(`\n✅✅✅ PAYMENT SUCCESSFUL! ✅✅✅`);
+      
       if (pendingOrder) {
-        console.log('✅ Payment successful! Creating order...');
+        console.log('📦 Creating order from pending data...');
         
         // Extract payment metadata
         const items = callback.CallbackMetadata?.Item || [];
         let mpesaReceipt = '';
         let amount = 0;
         
+        console.log('\n💰 Payment Metadata:');
         for (const item of items) {
-          console.log(`  Metadata: ${item.Name} = ${item.Value}`);
+          console.log(`  ${item.Name}: ${item.Value}`);
           if (item.Name === 'MpesaReceiptNumber') {
             mpesaReceipt = item.Value;
           }
@@ -267,54 +274,49 @@ router.post('/mpesa-callback', async (req, res) => {
           payment_method: 'mpesa',
           payment_status: 'completed',
           status: 'processing',
-          mpesa_transaction_id: mpesaReceipt
+          mpesa_transaction_id: mpesaReceipt || checkoutId
         });
         
         await order.save();
+        console.log(`✅ Order created: ${orderNumber}`);
         
         // Update stock
         for (const item of pendingOrder.items) {
           await Product.findByIdAndUpdate(item.product_id, {
             $inc: { stock: -item.quantity }
           });
+          console.log(`  Stock updated for product: ${item.product_id}`);
         }
         
         // Clean up pending order
         delete global.pendingOrders[checkoutId];
-        
-        console.log(`✅ Order created: ${orderNumber}`);
-        console.log(`✅ Stock updated`);
-        console.log(`✅ Receipt: ${mpesaReceipt}`);
+        console.log(`✅ Cleaned up pending order`);
         
       } else {
-        // Order might already exist or was processed differently
-        console.log('⚠️ No pending order found for checkout ID, checking existing orders...');
+        console.log(`⚠️ No pending order found for checkout ID: ${checkoutId}`);
         
+        // Check if order already exists
         const existingOrder = await Order.findOne({ mpesa_transaction_id: checkoutId });
-        if (!existingOrder) {
-          console.log('❌ No order found for this payment');
-        } else {
+        if (existingOrder) {
           console.log(`✅ Order already exists: ${existingOrder.order_number}`);
+        } else {
+          console.log(`❌ ERROR: Payment successful but no order data found!`);
+          console.log(`   Checkout ID: ${checkoutId}`);
+          console.log(`   Pending orders: ${Object.keys(global.pendingOrders || {})}`);
         }
       }
       
     } else {
       // PAYMENT FAILED
-      console.log(`❌ Payment failed: ${resultDesc}`);
+      console.log(`\n❌ PAYMENT FAILED: ${resultDesc}`);
       
       if (pendingOrder) {
-        // Mark as failed and clean up
-        if (!global.failedPayments) global.failedPayments = {};
-        global.failedPayments[checkoutId] = {
-          reason: resultDesc,
-          timestamp: new Date()
-        };
+        console.log('🧹 Cleaning up failed payment...');
         delete global.pendingOrders[checkoutId];
-        console.log('✅ Cleaned up failed payment');
       }
     }
     
-    console.log('========== CALLBACK PROCESSED ==========\n');
+    console.log('\n========== CALLBACK PROCESSED ==========\n');
     res.json({ ResultCode: 0, ResultDesc: 'Success' });
     
   } catch (error) {
