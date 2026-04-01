@@ -92,7 +92,6 @@
         const email = e.target.querySelector('input[type="email"]').value;
         
         if (email) {
-            // Store in localStorage or send to backend
             localStorage.setItem('newsletter_email', email);
             alert('Thank you for subscribing to our newsletter!');
             e.target.reset();
