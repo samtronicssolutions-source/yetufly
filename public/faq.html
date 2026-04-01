@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Yetu Kenya</title>
+    <meta name="description" content="Frequently asked questions about Yetu e-commerce. Find answers about orders, payments, shipping, and returns.">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .page-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .page-container h1 {
+            color: #f57224;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f57224;
+            padding-bottom: 10px;
+        }
+        .faq-item {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+        .faq-question {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+        }
+        .faq-question:hover {
+            color: #f57224;
+        }
+        .faq-answer {
+            display: none;
+            padding: 10px 0 15px;
+            color: #666;
+            line-height: 1.6;
+        }
+        .faq-answer.show {
+            display: block;
+        }
+        .faq-question i {
+            transition: transform 0.3s;
+        }
+        .faq-question.active i {
+            transform: rotate(180deg);
+        }
+        @media (max-width: 768px) {
+            .page-container {
+                padding: 20px;
+                margin: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
+    <main>
+        <div class="container">
+            <div class="page-container">
+                <h1>Frequently Asked Questions</h1>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do I place an order?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Simply browse our products, add items to your cart, and proceed to checkout. You'll need to provide your shipping information and choose a payment method (M-Pesa or Cash on Delivery).
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What payment methods do you accept?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        We accept M-Pesa (Lipa Na M-Pesa - STK Push) and Cash on Delivery. For M-Pesa payments, you'll receive a payment request on your phone to complete the transaction.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How long does delivery take?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Delivery times vary by location: Nairobi (1-2 business days), major towns (2-3 days), other counties (3-5 days). Orders over KSh 5,000 qualify for free shipping.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Can I return a product?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, we offer a 30-day money-back guarantee. Items must be unused and in original packaging. Contact our support team to initiate a return.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How do I track my order?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Once your order is shipped, you'll receive a tracking number via SMS and email. You can also check your order status by contacting our customer service.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What if my product is defective?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        If you receive a defective product, please contact us within 7 days of delivery. We'll arrange for a replacement or refund at no extra cost.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">
+                        Do you offer warranty on products?
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, most of our products come with a manufacturer's warranty. Warranty periods vary by product. Check the product description for details.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <div id="footer-placeholder"></div>
+    <script>
+        fetch('/header.html').then(r => r.text()).then(h => document.getElementById('header-placeholder').innerHTML = h);
+        fetch('/footer.html').then(r => r.text()).then(f => document.getElementById('footer-placeholder').innerHTML = f);
+        
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                question.classList.toggle('active');
+                const answer = question.nextElementSibling;
+                answer.classList.toggle('show');
+            });
+        });
+    </script>
+</body>
+</html>
