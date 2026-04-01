@@ -1,0 +1,13 @@
+# Robots.txt for Yetu E-commerce
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /cart/
+
+# Sitemap location
+Sitemap: https://yetu.onrender.com/sitemap.xml
+
+# Crawl delay for bots
+Crawl-delay: 1
