@@ -9,9 +9,10 @@
                 <button onclick="searchProducts()"><i class="fas fa-search"></i></button>
             </div>
             <div class="header-actions">
-                <a href="/cart" class="cart-icon">
+                <a href="/cart" class="cart-icon" aria-label="Shopping Cart">
                     <i class="fas fa-shopping-cart"></i>
                     <span class="cart-count">0</span>
+                    <span class="cart-text">Cart</span>
                 </a>
             </div>
         </div>
@@ -26,39 +27,53 @@
     </nav>
 </header>
 
+<style>
+    .cart-icon {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .cart-text {
+        font-size: 14px;
+        font-weight: normal;
+    }
+    @media (max-width: 768px) {
+        .cart-text {
+            display: none;
+        }
+    }
+</style>
+
 <script>
     async function loadNavCategories() {
         try {
             const response = await fetch('/api/categories');
             const categories = await response.json();
-            // Only show main categories (parent_id = null)
             const mainCategories = categories.filter(c => !c.parent_id);
             
             const categoriesMenu = document.getElementById('categoriesMenu');
             if (categoriesMenu) {
-                // Clear existing items except Home and Shop All
                 categoriesMenu.innerHTML = `
                     <li><a href="/">Home</a></li>
                     <li><a href="/category">Shop All</a></li>
                 `;
                 
-                // Add each main category
                 mainCategories.forEach(cat => {
                     const hasSubs = categories.filter(c => c.parent_id === cat._id).length > 0;
                     if (hasSubs) {
                         categoriesMenu.innerHTML += `
                             <li class="dropdown">
-                                <a href="/category?id=${cat._id}">${cat.name}</a>
+                                <a href="/category?id=${cat._id}">${escapeHtml(cat.name)}</a>
                                 <ul class="dropdown-menu">
                                     ${categories.filter(c => c.parent_id === cat._id).map(sub => `
-                                        <li><a href="/category?id=${sub._id}">${sub.name}</a></li>
+                                        <li><a href="/category?id=${sub._id}">${escapeHtml(sub.name)}</a></li>
                                     `).join('')}
                                 </ul>
                             </li>
                         `;
                     } else {
                         categoriesMenu.innerHTML += `
-                            <li><a href="/category?id=${cat._id}">${cat.name}</a></li>
+                            <li><a href="/category?id=${cat._id}">${escapeHtml(cat.name)}</a></li>
                         `;
                     }
                 });
@@ -72,12 +87,32 @@
         const query = document.getElementById('searchInput').value.trim();
         if (query) {
             window.location.href = `/category?search=${encodeURIComponent(query)}`;
+        } else {
+            const input = document.getElementById('searchInput');
+            input.style.border = '2px solid #e74c3c';
+            setTimeout(() => {
+                input.style.border = '2px solid #f57224';
+            }, 1000);
         }
     }
     
     document.getElementById('searchInput').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') searchProducts();
     });
+    
+    document.getElementById('searchInput').addEventListener('input', function() {
+        this.style.border = '2px solid #f57224';
+    });
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
     
     loadNavCategories();
 </script>
