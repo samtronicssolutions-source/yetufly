@@ -1,0 +1,48 @@
+// Sitemap Generator
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    const baseUrl = 'https://yetu.onrender.com';
+    const categories = await Category.find({ parent_id: null });
+    const products = await Product.find();
+    
+    let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
+    
+    // Static pages
+    const staticPages = ['', '/category', '/cart', '/checkout'];
+    staticPages.forEach(page => {
+      sitemap += `  <url>\n`;
+      sitemap += `    <loc>${baseUrl}${page}</loc>\n`;
+      sitemap += `    <changefreq>daily</changefreq>\n`;
+      sitemap += `    <priority>${page === '' ? '1.0' : '0.8'}</priority>\n`;
+      sitemap += `  </url>\n`;
+    });
+    
+    // Category pages
+    categories.forEach(cat => {
+      sitemap += `  <url>\n`;
+      sitemap += `    <loc>${baseUrl}/category?id=${cat._id}</loc>\n`;
+      sitemap += `    <changefreq>weekly</changefreq>\n`;
+      sitemap += `    <priority>0.7</priority>\n`;
+      sitemap += `  </url>\n`;
+    });
+    
+    // Product pages
+    products.forEach(product => {
+      sitemap += `  <url>\n`;
+      sitemap += `    <loc>${baseUrl}/product/${product._id}</loc>\n`;
+      sitemap += `    <lastmod>${new Date(product.created_at).toISOString()}</lastmod>\n`;
+      sitemap += `    <changefreq>weekly</changefreq>\n`;
+      sitemap += `    <priority>0.6</priority>\n`;
+      sitemap += `  </url>\n`;
+    });
+    
+    sitemap += '</urlset>';
+    
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemap);
+  } catch (error) {
+    console.error('Sitemap error:', error);
+    res.status(500).send('Error generating sitemap');
+  }
+});
