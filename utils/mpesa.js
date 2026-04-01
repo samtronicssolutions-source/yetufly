@@ -7,7 +7,6 @@ async function getAccessToken() {
   console.log('🔐 Getting M-Pesa access token...');
   console.log('Consumer Key present:', !!consumerKey);
   console.log('Consumer Secret present:', !!consumerSecret);
-  console.log('Environment:', process.env.NODE_ENV);
   
   if (!consumerKey || !consumerSecret) {
     console.error('❌ Missing M-Pesa credentials!');
@@ -16,24 +15,20 @@ async function getAccessToken() {
   
   const auth = Buffer.from(`${consumerKey}:${consumerSecret}`).toString('base64');
   
-  const url = process.env.NODE_ENV === 'production'
-    ? 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials'
-    : 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
-  
-  console.log('Auth URL:', url);
+  // Force sandbox for testing
+  const url = 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials';
   
   try {
     const response = await axios.get(url, {
       headers: { Authorization: `Basic ${auth}` },
       timeout: 30000
     });
-    console.log('✅ Access token obtained successfully');
+    console.log('✅ Access token obtained');
     return response.data.access_token;
   } catch (error) {
     console.error('❌ Error getting access token:');
     console.error('Status:', error.response?.status);
     console.error('Data:', error.response?.data);
-    console.error('Message:', error.message);
     return null;
   }
 }
@@ -50,32 +45,30 @@ function formatPhoneNumber(phone) {
     formatted = '254' + formatted;
   }
   
-  console.log('Phone formatting:', { original: phone, formatted });
   return formatted;
 }
 
 async function initiateMpesaPayment(phone, amount, orderNumber) {
   console.log('\n💰 Initiating M-Pesa payment...');
-  console.log('Order Number:', orderNumber);
+  console.log('Order:', orderNumber);
   console.log('Phone:', phone);
   console.log('Amount:', amount);
   
   const accessToken = await getAccessToken();
   if (!accessToken) {
-    console.error('❌ No access token');
     return { error: true, message: 'Failed to get access token' };
   }
   
-  const shortcode = process.env.MPESA_SHORTCODE;
-  const passkey = process.env.MPESA_PASSKEY;
+  const shortcode = process.env.MPESA_SHORTCODE || '174379';
+  const passkey = process.env.MPESA_PASSKEY || 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919';
   const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
   const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64');
   
-  const url = process.env.NODE_ENV === 'production'
-    ? 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
-    : 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
+  // Force sandbox URL
+  const url = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
   
   const formattedPhone = formatPhoneNumber(phone);
+  const callbackUrl = `${process.env.BASE_URL || 'https://yetu.onrender.com'}/api/orders/mpesa-callback`;
   
   const payload = {
     BusinessShortCode: shortcode,
@@ -86,18 +79,17 @@ async function initiateMpesaPayment(phone, amount, orderNumber) {
     PartyA: formattedPhone,
     PartyB: shortcode,
     PhoneNumber: formattedPhone,
-    CallBackURL: `${process.env.BASE_URL}/api/orders/mpesa-callback`,
+    CallBackURL: callbackUrl,
     AccountReference: orderNumber.slice(0, 12),
-    TransactionDesc: `Yetu Payment ${orderNumber.slice(-6)}`
+    TransactionDesc: `Yetu Payment`
   };
   
-  console.log('\n📤 M-Pesa Payload:');
-  console.log('  URL:', url);
-  console.log('  Shortcode:', shortcode);
-  console.log('  Phone:', formattedPhone);
-  console.log('  Amount:', payload.Amount);
-  console.log('  Callback URL:', payload.CallBackURL);
-  console.log('  Account Reference:', payload.AccountReference);
+  console.log('Payload:', {
+    shortcode,
+    amount: payload.Amount,
+    phone: formattedPhone,
+    callback: callbackUrl
+  });
   
   try {
     const response = await axios.post(url, payload, {
@@ -108,26 +100,11 @@ async function initiateMpesaPayment(phone, amount, orderNumber) {
       timeout: 30000
     });
     
-    console.log('\n✅ M-Pesa Response:');
-    console.log('  Response Code:', response.data.ResponseCode);
-    console.log('  Response Description:', response.data.ResponseDescription);
-    console.log('  Checkout Request ID:', response.data.CheckoutRequestID);
-    
+    console.log('✅ M-Pesa Response:', response.data.ResponseCode, response.data.ResponseDescription);
     return response.data;
   } catch (error) {
-    console.error('\n❌ Error initiating M-Pesa payment:');
-    console.error('Status:', error.response?.status);
-    console.error('Data:', JSON.stringify(error.response?.data, null, 2));
-    console.error('Message:', error.message);
-    
-    if (error.response?.data) {
-      return { 
-        error: true, 
-        message: error.response.data.errorMessage || error.response.data,
-        ResponseCode: error.response.data.ResponseCode || '1'
-      };
-    }
-    return { error: true, message: error.message };
+    console.error('❌ M-Pesa error:', error.response?.data || error.message);
+    return { error: true, message: error.response?.data?.errorMessage || error.message };
   }
 }
 
