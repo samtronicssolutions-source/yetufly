@@ -7,6 +7,7 @@ const path = require('path');
 
 const router = express.Router();
 
+// Get all products
 router.get('/', async (req, res) => {
   try {
     const { category, featured, limit, search } = req.query;
@@ -27,6 +28,7 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Get single product
 router.get('/:id', async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate('category_id');
@@ -37,6 +39,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Create product (admin only)
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -52,19 +55,27 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
       featured: req.body.featured === 'true'
     };
     
+    // Add image if uploaded
     if (req.file) {
+      // Store the relative path
       productData.image = `/images/products/${req.file.filename}`;
     }
     
     const product = new Product(productData);
     await product.save();
-    res.status(201).json(product);
+    
+    res.status(201).json({
+      success: true,
+      product,
+      message: 'Product created successfully'
+    });
   } catch (error) {
     console.error('Create product error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
+// Update product (admin only)
 router.put('/:id', auth, upload.single('image'), async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -81,24 +92,32 @@ router.put('/:id', auth, upload.single('image'), async (req, res) => {
     product.stock = parseInt(req.body.stock) || 0;
     product.featured = req.body.featured === 'true';
     
+    // Update image if new one uploaded
     if (req.file) {
-      if (product.image) {
+      // Delete old image if it exists
+      if (product.image && product.image !== '/images/products/placeholder.jpg') {
         const oldImagePath = path.join(__dirname, '../public', product.image);
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
+          console.log(`🗑️ Deleted old image: ${oldImagePath}`);
         }
       }
       product.image = `/images/products/${req.file.filename}`;
     }
     
     await product.save();
-    res.json(product);
+    res.json({
+      success: true,
+      product,
+      message: 'Product updated successfully'
+    });
   } catch (error) {
     console.error('Update product error:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
+// Delete product (admin only)
 router.delete('/:id', auth, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -108,15 +127,20 @@ router.delete('/:id', auth, async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ error: 'Product not found' });
     
-    if (product.image) {
+    // Delete image file if it exists
+    if (product.image && product.image !== '/images/products/placeholder.jpg') {
       const imagePath = path.join(__dirname, '../public', product.image);
       if (fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
+        console.log(`🗑️ Deleted image: ${imagePath}`);
       }
     }
     
     await Product.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Product deleted successfully' });
+    res.json({ 
+      success: true,
+      message: 'Product deleted successfully' 
+    });
   } catch (error) {
     console.error('Delete product error:', error);
     res.status(500).json({ error: error.message });
