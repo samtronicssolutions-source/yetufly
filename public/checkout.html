@@ -17,7 +17,6 @@
             background: white;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .form-group {
             margin-bottom: 20px;
@@ -37,7 +36,6 @@
             background: white;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             height: fit-content;
         }
         .summary-item {
@@ -53,7 +51,6 @@
             margin-top: 20px;
             padding-top: 20px;
             border-top: 2px solid #f57224;
-            font-size: 18px;
             font-weight: bold;
         }
         .btn-place-order {
@@ -63,7 +60,6 @@
             color: white;
             border: none;
             border-radius: 5px;
-            font-size: 16px;
             cursor: pointer;
             margin-top: 20px;
         }
@@ -101,32 +97,24 @@
 </head>
 <body>
     <div id="header-placeholder"></div>
-    
     <main>
         <div class="container">
             <h1>Checkout</h1>
             <div id="checkoutContent"></div>
         </div>
     </main>
-    
     <div id="footer-placeholder"></div>
-    
     <script src="/js/main.js"></script>
     <script src="/js/cart.js"></script>
     <script>
         async function loadCheckout() {
             const cart = getCart();
             const ids = Object.keys(cart);
-            
-            if (!ids.length) {
-                window.location.href = '/cart';
-                return;
-            }
+            if (!ids.length) { window.location.href = '/cart'; return; }
             
             try {
                 const items = [];
                 let total = 0;
-                
                 for (const id of ids) {
                     const res = await fetch(`/api/products/${id}`);
                     const p = await res.json();
@@ -162,21 +150,16 @@
                                     </select>
                                 </div>
                                 <div class="mpesa-note" id="mpesaNote">
-                                    <i class="fas fa-info-circle"></i> 
-                                    For M-Pesa payments, you will receive a payment request on your phone. 
-                                    Enter your PIN to complete payment.
+                                    <i class="fas fa-info-circle"></i> For M-Pesa payments, you will receive a payment request on your phone.
                                 </div>
-                                <button type="submit" class="btn-place-order" id="placeOrderBtn">
-                                    <i class="fas fa-check"></i> Place Order
-                                </button>
+                                <button type="submit" class="btn-place-order" id="placeOrderBtn">Place Order</button>
                             </form>
                         </div>
-                        
                         <div class="order-summary">
                             <h2>Order Summary</h2>
                             ${items.map(i => `
                                 <div class="summary-item">
-                                    <span>${escapeHtml(i.name)} x ${i.quantity}</span>
+                                    <span>${i.name} x ${i.quantity}</span>
                                     <span>KSh ${i.subtotal.toLocaleString()}</span>
                                 </div>
                             `).join('')}
@@ -188,10 +171,8 @@
                     </div>
                 `;
                 
-                // Update M-Pesa note visibility based on payment method
                 const paymentSelect = document.getElementById('paymentMethod');
                 const mpesaNote = document.getElementById('mpesaNote');
-                
                 paymentSelect.addEventListener('change', () => {
                     mpesaNote.style.display = paymentSelect.value === 'mpesa' ? 'block' : 'none';
                 });
@@ -201,9 +182,7 @@
                     await placeOrder(total);
                 });
                 
-            } catch (error) {
-                console.error('Error loading checkout:', error);
-            }
+            } catch (error) { console.error(error); }
         }
         
         async function placeOrder(total) {
@@ -213,27 +192,20 @@
             const paymentMethod = document.getElementById('paymentMethod').value;
             const submitBtn = document.getElementById('placeOrderBtn');
             
-            if (!name) {
-                showNotification('Please enter your name', 'error');
+            if (!name || !phone || !email) {
+                showNotification('Please fill all fields', 'error');
                 return;
             }
             
-            if (!phone) {
-                showNotification('Please enter your phone number', 'error');
-                return;
-            }
-            
-            // Validate phone format (Kenyan number)
             const phoneRegex = /^(254|0)?[7-9][0-9]{8}$/;
             if (!phoneRegex.test(phone)) {
-                showNotification('Please enter a valid Kenyan phone number (e.g., 2547XXXXXXXX or 07XXXXXXXX)', 'error');
+                showNotification('Please enter a valid Kenyan phone number', 'error');
                 return;
             }
             
             const cart = getCart();
             const items = Object.entries(cart).map(([id, qty]) => ({ product_id: id, quantity: qty }));
             
-            // Disable button and show loading
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="loading-spinner"></span> Processing...';
             
@@ -245,7 +217,7 @@
                         customer_name: name,
                         customer_phone: phone,
                         customer_email: email,
-                        items: items,
+                        items,
                         payment_method: paymentMethod
                     })
                 });
@@ -253,64 +225,43 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Clear cart
                     localStorage.removeItem('cart');
                     updateCartCount();
                     
                     if (paymentMethod === 'mpesa') {
                         if (result.payment_initiated === false) {
-                            showNotification('Payment initiation failed. Please try again or choose Cash on Delivery.', 'error');
+                            showNotification('Payment initiation failed. Please try again.', 'error');
                             submitBtn.disabled = false;
-                            submitBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+                            submitBtn.innerHTML = 'Place Order';
                         } else {
-                            showNotification('Payment request sent to your phone! Please enter your PIN to complete payment.', 'success');
-                            // Store payment method for success page
+                            showNotification('Payment request sent to your phone!', 'success');
                             localStorage.setItem('lastPaymentMethod', 'mpesa');
-                            // Redirect to order success after 5 seconds
                             setTimeout(() => {
                                 window.location.href = `/order-success?order=${result.order_number}`;
                             }, 5000);
                         }
                     } else {
-                        // Cash on delivery
                         window.location.href = `/order-success?order=${result.order_number}`;
                     }
                 } else {
-                    showNotification(result.error || 'Order failed. Please try again.', 'error');
+                    showNotification(result.error || 'Order failed', 'error');
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+                    submitBtn.innerHTML = 'Place Order';
                 }
             } catch (error) {
-                console.error('Error placing order:', error);
-                showNotification('Network error. Please check your connection and try again.', 'error');
+                showNotification('Network error. Please try again.', 'error');
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+                submitBtn.innerHTML = 'Place Order';
             }
-        }
-        
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
         }
         
         async function loadHeaderFooter() {
-            try {
-                const headerRes = await fetch('/header.html');
-                const footerRes = await fetch('/footer.html');
-                const header = await headerRes.text();
-                const footer = await footerRes.text();
-                document.getElementById('header-placeholder').innerHTML = header;
-                document.getElementById('footer-placeholder').innerHTML = footer;
-                updateCartCount();
-                if (typeof loadNavCategories === 'function') loadNavCategories();
-            } catch (error) {
-                console.error('Error loading header/footer:', error);
-            }
+            const header = await (await fetch('/header.html')).text();
+            const footer = await (await fetch('/footer.html')).text();
+            document.getElementById('header-placeholder').innerHTML = header;
+            document.getElementById('footer-placeholder').innerHTML = footer;
+            updateCartCount();
+            if (typeof loadNavCategories === 'function') loadNavCategories();
         }
         
         loadHeaderFooter();
