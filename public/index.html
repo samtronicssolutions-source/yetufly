@@ -3,9 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yetu - Quality Products for Every Home</title>
+    
+    <!-- Primary SEO Tags -->
+    <title>Yetu - Quality Products for Every Home in Kenya</title>
+    <meta name="title" content="Yetu - Quality Products for Every Home in Kenya">
+    <meta name="description" content="Shop the best quality products in Kenya at Yetu. Find Audio, TV, Accessories, and more. Free shipping on orders over KSh 5,000. Pay with M-Pesa or Cash on Delivery.">
+    <meta name="keywords" content="yetu, ecommerce kenya, online shopping kenya, audio, tv, accessories, electronics, kitchenware, m-pesa payments">
+    <meta name="author" content="Yetu">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yetu.onrender.com/">
+    <meta property="og:title" content="Yetu - Quality Products for Every Home in Kenya">
+    <meta property="og:description" content="Shop the best quality products in Kenya at Yetu. Find Audio, TV, Accessories, and more. Free shipping on orders over KSh 5,000.">
+    <meta property="og:image" content="https://yetu.onrender.com/images/og-image.jpg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://yetu.onrender.com/">
+    <meta property="twitter:title" content="Yetu - Quality Products for Every Home in Kenya">
+    <meta property="twitter:description" content="Shop the best quality products in Kenya at Yetu. Find Audio, TV, Accessories, and more.">
+    <meta property="twitter:image" content="https://yetu.onrender.com/images/og-image.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://yetu.onrender.com/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/images/logo/apple-touch-icon.png">
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
+    
+    <!-- JSON-LD Structured Data for Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Yetu",
+      "url": "https://yetu.onrender.com",
+      "logo": "https://yetu.onrender.com/images/logo.png",
+      "description": "Quality products for every home in Kenya",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Nairobi",
+        "addressCountry": "KE"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+254700000000",
+        "contactType": "customer service"
+      },
+      "sameAs": [
+        "https://facebook.com/yetu",
+        "https://twitter.com/yetu",
+        "https://instagram.com/yetu"
+      ]
+    }
+    </script>
+    
+    <!-- JSON-LD for Local Business -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Yetu",
+      "image": "https://yetu.onrender.com/images/logo.png",
+      "description": "Quality products for every home in Kenya",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Nairobi",
+        "addressCountry": "KE"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": "-1.286389",
+        "longitude": "36.817223"
+      },
+      "priceRange": "$$",
+      "telephone": "+254700000000"
+    }
+    </script>
 </head>
 <body>
     <div id="header-placeholder"></div>
@@ -14,8 +99,8 @@
         <section class="hero">
             <div class="container">
                 <div class="hero-content">
-                    <h2>Excellent Quality Only</h2>
-                    <p>Nothing else - Quality products at the best prices</p>
+                    <h1>Yetu - Quality Products for Every Home in Kenya</h1>
+                    <p>Shop the best Audio, TV, Accessories, and more with M-Pesa payments</p>
                     <a href="/category" class="btn-primary">Shop Now</a>
                 </div>
             </div>
@@ -32,6 +117,24 @@
             <div class="container">
                 <h2 class="section-title">Shop by Category</h2>
                 <div class="categories-grid" id="categoriesGrid"></div>
+            </div>
+        </section>
+        
+        <!-- SEO Content Section -->
+        <section class="seo-content">
+            <div class="container">
+                <div class="seo-text">
+                    <h2>Why Choose Yetu?</h2>
+                    <p>Yetu is your trusted online shopping destination in Kenya, offering quality products at competitive prices. We specialize in Audio equipment, TV sets, Accessories, and more. Our commitment to excellent quality and customer satisfaction sets us apart.</p>
+                    
+                    <h3>Shop with Confidence</h3>
+                    <ul>
+                        <li>✓ Secure M-Pesa payments</li>
+                        <li>✓ Cash on delivery available</li>
+                        <li>✓ Quality products guaranteed</li>
+                        <li>✓ Fast delivery across Kenya</li>
+                    </ul>
+                </div>
             </div>
         </section>
     </main>
@@ -51,7 +154,7 @@
                         <div class="product-card">
                             <div class="product-image">
                                 <a href="/product/${p._id}">
-                                    <img src="${p.image || '/images/products/placeholder.jpg'}" alt="${p.name}" onerror="this.src='/images/products/placeholder.jpg'">
+                                    <img src="${p.image || '/images/products/placeholder.jpg'}" alt="${p.name}" loading="lazy" onerror="this.src='/images/products/placeholder.jpg'">
                                 </a>
                             </div>
                             <div class="product-info">
