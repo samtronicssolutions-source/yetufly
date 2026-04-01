@@ -26,11 +26,13 @@ async function loadCartPage() {
         
         document.getElementById('cartContent').innerHTML = `
             <table class="cart-table">
-                <thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr></thead>
+                <thead>
+                    <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr>
+                </thead>
                 <tbody>
                     ${items.map(p => `
                         <tr>
-                            <td><img src="${p.image || 'https://via.placeholder.com/80'}" style="width:80px;height:80px;object-fit:cover;margin-right:15px">${p.name}</td>
+                            <td><img src="${p.image || '/images/products/placeholder.jpg'}" style="width:80px;height:80px;object-fit:cover;margin-right:15px">${p.name}</td>
                             <td>KSh ${p.price.toLocaleString()}</td>
                             <td><input type="number" id="qty_${p._id}" value="${p.quantity}" min="1" style="width:60px;padding:5px"></td>
                             <td>KSh ${p.subtotal.toLocaleString()}</td>
