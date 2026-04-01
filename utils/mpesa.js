@@ -20,23 +20,6 @@ async function getAccessToken() {
   }
 }
 
-// Format phone number for M-Pesa (must be 254XXXXXXXXX)
-function formatPhoneNumber(phone) {
-  let formatted = phone.toString().trim();
-  // Remove any non-digit characters
-  formatted = formatted.replace(/\D/g, '');
-  // If starts with 0, replace with 254
-  if (formatted.startsWith('0')) {
-    formatted = '254' + formatted.substring(1);
-  }
-  // If starts with 254, keep as is
-  // If starts with anything else, add 254
-  else if (!formatted.startsWith('254')) {
-    formatted = '254' + formatted;
-  }
-  return formatted;
-}
-
 async function initiateMpesaPayment(phone, amount, orderNumber) {
   const accessToken = await getAccessToken();
   if (!accessToken) return null;
@@ -50,29 +33,19 @@ async function initiateMpesaPayment(phone, amount, orderNumber) {
     ? 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
     : 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
   
-  // Format phone number correctly
-  const formattedPhone = formatPhoneNumber(phone);
-  
   const payload = {
     BusinessShortCode: shortcode,
     Password: password,
     Timestamp: timestamp,
     TransactionType: 'CustomerPayBillOnline',
     Amount: Math.round(amount),
-    PartyA: formattedPhone,
+    PartyA: phone,
     PartyB: shortcode,
-    PhoneNumber: formattedPhone,
+    PhoneNumber: phone,
     CallBackURL: `${process.env.BASE_URL}/api/orders/mpesa-callback`,
     AccountReference: orderNumber.slice(0, 12),
     TransactionDesc: `Payment for order ${orderNumber}`
   };
-  
-  console.log('M-Pesa Payload:', { 
-    ...payload, 
-    Password: '***',
-    PartyA: formattedPhone,
-    PhoneNumber: formattedPhone
-  });
   
   try {
     const response = await axios.post(url, payload, {
@@ -81,7 +54,6 @@ async function initiateMpesaPayment(phone, amount, orderNumber) {
         'Content-Type': 'application/json'
       }
     });
-    console.log('M-Pesa Response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error initiating M-Pesa payment:', error.response?.data || error.message);
@@ -89,4 +61,4 @@ async function initiateMpesaPayment(phone, amount, orderNumber) {
   }
 }
 
-module.exports = { initiateMpesaPayment, getAccessToken, formatPhoneNumber };
+module.exports = { initiateMpesaPayment, getAccessToken };
