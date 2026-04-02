@@ -24,7 +24,6 @@ const connectDB = async () => {
     
     await createIndexes();
     
-    // Handle connection events
     mongoose.connection.on('disconnected', () => {
       console.log('⚠️ MongoDB disconnected!');
       isConnected = false;
@@ -33,11 +32,6 @@ const connectDB = async () => {
     mongoose.connection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err);
       isConnected = false;
-    });
-    
-    mongoose.connection.on('reconnected', () => {
-      console.log('✅ MongoDB reconnected');
-      isConnected = true;
     });
     
   } catch (error) {
