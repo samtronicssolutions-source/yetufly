@@ -1,0 +1,39 @@
+# fly.toml file for Yetu E-commerce
+
+app = "yetu-fly"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  NODE_ENV = "production"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+  max_machines_running = 3
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "get"
+    path = "/health"
+    protocol = "http"
+    timeout = "2s"
+    tls_skip_verify = false
+
+# Persistent volume for product images
+[mounts]
+  source = "yetu_images"
+  destination = "/app/public/images/products"
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
