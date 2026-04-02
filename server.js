@@ -4,12 +4,14 @@ const session = require('express-session');
 const path = require('path');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const compression = require('compression');
 const connectDB = require('./config/database');
 
 dotenv.config();
 
 const app = express();
 
+// Database connection with retry logic
 let dbConnected = false;
 let connectionRetryInterval = null;
 
@@ -57,6 +59,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Compression for better performance
+app.use(compression());
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -64,6 +69,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
+// Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
@@ -90,32 +96,25 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
 // ============================================
-// SITEMAP GENERATOR
+// SITEMAP GENERATOR (Dynamic for Fly.io)
 // ============================================
 app.get('/sitemap.xml', async (req, res) => {
   try {
     const Category = require('./models/Category');
     const Product = require('./models/Product');
     
-    const baseUrl = 'https://yetu.onrender.com';
+    const baseUrl = process.env.BASE_URL || 'https://yetu-fly.fly.dev';
     const categories = await Category.find({ parent_id: null });
     const products = await Product.find();
     
     let sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n';
     sitemap += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
     
-    // Static pages
     const staticPages = [
       { url: '', priority: 1.0, changefreq: 'daily' },
       { url: '/category', priority: 0.9, changefreq: 'daily' },
       { url: '/cart', priority: 0.5, changefreq: 'monthly' },
-      { url: '/checkout', priority: 0.5, changefreq: 'monthly' },
-      { url: '/shipping', priority: 0.6, changefreq: 'monthly' },
-      { url: '/returns', priority: 0.6, changefreq: 'monthly' },
-      { url: '/faq', priority: 0.6, changefreq: 'monthly' },
-      { url: '/privacy', priority: 0.5, changefreq: 'yearly' },
-      { url: '/terms', priority: 0.5, changefreq: 'yearly' },
-      { url: '/track-order', priority: 0.7, changefreq: 'weekly' }
+      { url: '/checkout', priority: 0.5, changefreq: 'monthly' }
     ];
     
     staticPages.forEach(page => {
@@ -126,7 +125,6 @@ app.get('/sitemap.xml', async (req, res) => {
       sitemap += `  </url>\n`;
     });
     
-    // Category pages
     categories.forEach(cat => {
       sitemap += `  <url>\n`;
       sitemap += `    <loc>${baseUrl}/category?id=${cat._id}</loc>\n`;
@@ -135,7 +133,6 @@ app.get('/sitemap.xml', async (req, res) => {
       sitemap += `  </url>\n`;
     });
     
-    // Product pages
     products.forEach(product => {
       sitemap += `  <url>\n`;
       sitemap += `    <loc>${baseUrl}/product/${product._id}</loc>\n`;
@@ -204,34 +201,7 @@ app.get('/robots.txt', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
 });
 
-// ============================================
-// CUSTOMER SERVICE PAGES
-// ============================================
-app.get('/shipping', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'shipping.html'));
-});
-
-app.get('/returns', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'returns.html'));
-});
-
-app.get('/faq', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'faq.html'));
-});
-
-app.get('/privacy', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'privacy.html'));
-});
-
-app.get('/terms', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'terms.html'));
-});
-
-app.get('/track-order', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'track-order.html'));
-});
-
-// Health check endpoint
+// Health check endpoint for Fly.io
 app.get('/health', (req, res) => {
   let dbStatus = 'unknown';
   try {
@@ -245,12 +215,14 @@ app.get('/health', (req, res) => {
     status: 'healthy', 
     timestamp: new Date().toISOString(),
     database: dbStatus,
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+    fly_region: process.env.FLY_REGION || 'unknown'
   });
 });
 
 // ============================================
-// 404 HANDLER FOR HTML PAGES
+// 404 HANDLER
 // ============================================
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -259,7 +231,6 @@ app.use((req, res, next) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
 
-// API 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
@@ -271,7 +242,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 Server running on port ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 URL: http://localhost:${PORT}\n`);
