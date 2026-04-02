@@ -1,0 +1,9 @@
+node_modules/
+.env
+uploads/
+.DS_Store
+*.log
+
+# DO NOT ignore images - we want them in git
+# Remove any lines that ignore public/images/
+# public/images/ should NOT be in .gitignore
