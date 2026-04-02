@@ -1,12 +1,15 @@
 {
-  "name": "yetu-ecommerce",
+  "name": "yetu-ecommerce-fly",
   "version": "1.0.0",
+  "description": "Yetu E-commerce with M-Pesa Integration - Optimized for Fly.io",
+  "main": "server.js",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node scripts/seed.js",
-    "backup-images": "node scripts/backup-images.js",
-    "commit-images": "git add public/images/products/ && git commit -m 'Update product images' && git push"
+    "seed": "node scripts/seed.js"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -17,7 +20,8 @@
     "jsonwebtoken": "^9.0.2",
     "express-session": "^1.17.3",
     "multer": "^1.4.5-lts.1",
-    "axios": "^1.5.0"
+    "axios": "^1.5.0",
+    "compression": "^1.7.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
